@@ -1,5 +1,7 @@
 # Tama Tracky
 
+# For Main Paper check TamaTracky-IntroToProgrammingFBLA25-26.PDF
+
 **Educational Virtual Pet Game - FBLA Introduction to Programming Project**
 
 Tama Tracky is an educational virtual pet game that teaches financial responsibility through pet care. Players manage a virtual pet's health, happiness, and well-being while tracking expenses, earning coins through tasks, and learning about real-world cost-of-care concepts.
@@ -125,6 +127,7 @@ Tama Tracky follows a **clean, modular architecture**:
 - **[docs/architecture.md](./docs/architecture.md)**: System architecture and technical details
 - **[docs/design_notes.md](./docs/design_notes.md)**: Design decisions and rationale
 - **[docs/attributions.md](./docs/attributions.md)**: Third-party library credits
+- **[TamaTracky-IntroToProgrammingFBLA25-26.pdf](./TamaTracky-IntroToProgrammingFBLA25-26.pdf)**: Third-party library credits
 
 
 This project is created for FBLA Introduction to Programming competition.
