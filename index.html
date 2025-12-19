@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="Tama Tracky - A Progressive Web App for tracking your virtual pet" />
+    <!-- Pixelify Sans Font - Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Tama Tracky</title>
+    <!-- Apply theme class immediately to prevent white screen -->
+    <script>
+      (function() {
+        try {
+          const savedTheme = localStorage.getItem('tamatracky_theme');
+          const theme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'light';
+          document.documentElement.classList.add(theme);
+        } catch (e) {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
