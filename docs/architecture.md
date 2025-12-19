@@ -18,7 +18,7 @@ Tama Tracky is a Progressive Web App (PWA) built with React, TypeScript, and Vit
 - **Autoprefixer 10.4.16**: Automatic vendor prefixing for CSS
 
 ### Data Persistence
-- **idb 8.0.0**: Promise-based wrapper for IndexedDB, providing reliable client-side storage
+- **localStorage**: Browser localStorage for save slot persistence (via `core/storage.ts`)
 
 ### Data Visualization
 - **Chart.js 4.4.0**: Powerful charting library for data visualization
@@ -33,30 +33,66 @@ Tama Tracky is a Progressive Web App (PWA) built with React, TypeScript, and Vit
 ```
 TamaTracky/
 ├── public/                 # Static assets
-│   └── manifest.json       # PWA manifest
+│   ├── manifest.json       # PWA manifest
+│   └── ICONS_README.md     # Icon documentation
 ├── src/
 │   ├── components/         # Reusable React components
 │   │   ├── NavBar.tsx      # Navigation bar component
 │   │   ├── StatBar.tsx     # Pet statistic display component
 │   │   ├── PetAvatar.tsx   # Pet visual representation
+│   │   ├── PetHUD.tsx      # Pet status HUD (always visible)
 │   │   ├── ExpenseTable.tsx # Expense history table
-│   │   └── ExpenseChart.tsx # Chart.js visualizations
+│   │   ├── ExpenseChart.tsx # Chart.js visualizations
+│   │   ├── DailyQuests.tsx # Daily quest display
+│   │   ├── DailyCheckInModal.tsx # Daily check-in modal
+│   │   └── TaskActivityModal.tsx # Task completion modal
 │   ├── contexts/           # React Context providers
-│   │   └── PetContext.tsx  # Global pet state management
-│   ├── lib/                # Core business logic and utilities
-│   │   ├── pet.ts          # Pet class with all pet logic
-│   │   ├── db.ts           # IndexedDB wrapper functions
-│   │   ├── validation.ts   # Input validation utilities
-│   │   ├── csvExport.ts    # CSV export functionality
-│   │   └── demoMode.ts     # Demo mode utilities
+│   │   └── ThemeContext.tsx # Theme management
+│   ├── core/               # Core game logic (pure TypeScript)
+│   │   ├── pet.ts          # Pet lifecycle, stats, XP, age stages
+│   │   ├── actions.ts      # Pet care actions (feed, play, rest, clean, visitVet)
+│   │   ├── money.ts        # Coin economy (earn, spend, chores)
+│   │   ├── shop.ts         # Store system (buy items, inventory)
+│   │   ├── expenses.ts     # Expense logging and cost tracking
+│   │   ├── storage.ts      # Persistence (localStorage save/load)
+│   │   ├── badges.ts       # Achievement system
+│   │   ├── quests.ts       # Daily quest system
+│   │   ├── tasks.ts        # Task system with cooldowns
+│   │   ├── rewards.ts      # Mini-game rewards, allowance, daily check-in
+│   │   ├── activities.ts   # Special activities (spa day, training, park trip)
+│   │   ├── demo.ts         # Demo mode seed data generation
+│   │   ├── expenses.ts     # Expense logging and cost tracking
+│   │   ├── utils.ts         # General utilities (mood, CSV export, totals)
+│   │   ├── validation.ts   # Input validation
+│   │   └── types.ts        # TypeScript type definitions
+│   ├── game/               # Game data definitions
+│   │   └── data.ts         # Static data (types, store items, quests, badges, constants)
+│   ├── data/               # Legacy static data (being migrated to game/)
+│   │   └── storeItems.ts   # Store item definitions
+│   ├── minigames/          # Mini-game components
+│   │   ├── BudgetBlitz.tsx # Budget management mini-game
+│   │   ├── CatchFood.tsx   # Food catching mini-game
+│   │   ├── CleanUp.tsx     # Cleaning mini-game
+│   │   └── MiniGameLoader.tsx # Mini-game loader
 │   ├── pages/              # Page components
-│   │   ├── Home.tsx        # Landing page with demo mode
+│   │   ├── Home.tsx        # Landing page with save slots
+│   │   ├── StartHere.tsx   # Onboarding page
 │   │   ├── CreatePet.tsx   # Pet creation form
 │   │   ├── Dashboard.tsx   # Main pet management interface
 │   │   ├── Store.tsx       # Virtual store
+│   │   ├── Tasks.tsx       # Tasks and daily quests
 │   │   ├── Reports.tsx     # Statistics and analytics
+│   │   ├── Achievements.tsx # Badges and achievements
+│   │   ├── Guide.tsx       # User guide
 │   │   └── Help.tsx        # Help page with Q&A bot
+│   ├── utils/              # Utility functions
+│   │   ├── reporting.ts    # Financial reporting utilities
+│   │   ├── sanitizeTransactions.ts # Transaction sanitization
+│   │   ├── helpRouter.ts   # Help system routing
+│   │   └── routeTitles.ts  # Route title management
 │   ├── App.tsx             # Main app component with routing
+│   ├── GameCore.ts         # Game facade (unified API)
+│   ├── useGameCore.ts      # React hook for game state
 │   ├── main.tsx            # Application entry point
 │   └── index.css           # Global styles (Tailwind imports)
 ├── docs/                   # Documentation
@@ -77,37 +113,61 @@ TamaTracky/
 - **Separation of Concerns**: UI components, business logic, and data access are clearly separated
 
 ### State Management
-- **React Context API**: Global pet state managed through PetContext
+- **React Hook (`useGameCore`)**: Centralized game state management
 - **Local State**: Component-specific state managed with useState hook
 - **Derived State**: Computed values using useMemo for performance optimization
+- **Auto-Save**: Automatic persistence after state changes
 
 ### Data Flow
 1. User interacts with UI component
-2. Component calls Pet class methods or context functions
-3. Pet class updates internal state
-4. Component creates new Pet instance to trigger re-render
-5. Context updates with new Pet instance
+2. Component calls `useGameCore()` hook functions
+3. Hook updates internal state via `GameCore` facade
+4. State updates trigger React re-render
+5. Changes automatically saved to localStorage via `core/storage.ts`
 6. Component re-renders with updated data
-7. Changes saved to IndexedDB automatically
 
 ### Data Persistence
-- **IndexedDB**: Primary storage mechanism via idb library
+- **localStorage**: Primary storage mechanism via `core/storage.ts`
 - **Automatic Saving**: Pet state saved after every action
-- **JSON Serialization**: Pet class provides toJSON()/fromJSON() for persistence
+- **Save Slots**: 3 independent save slots (Slot 1, 2, 3)
+- **Demo Mode**: Realistic seed data generation for presentations
+
+## Pet System Design
+
+### Pet Types
+- **3 Types Only**: Cat, Dog, Rabbit (FBLA-safe, easy to explain)
+- **Simple Selection**: Users choose from 3 clear options during pet creation
+
+### Age Progression
+- **Numeric Stages**: 0 (Baby), 1 (Young), 2 (Adult), 3 (Mature)
+- **XP-Based**: Age stage determined solely by XP thresholds:
+  - 0 XP = Baby (ageStage 0)
+  - 20 XP = Young (ageStage 1)
+  - 60 XP = Adult (ageStage 2)
+  - 120 XP = Mature (ageStage 3)
+- **Single Source of Truth**: `getAgeStage(xp)` function in `game/data.ts` is the ONLY function that determines age stage
+- **Automatic Updates**: Age stage recalculated automatically when XP changes
+
+### Pet Stats
+- **5 Core Stats**: Hunger, Happiness, Health, Energy, Cleanliness (all 0-100)
+- **Decay System**: Stats decay over time based on time elapsed
+- **Care Actions**: Feed, Play, Rest, Clean, Visit Vet (free actions)
+- **Mood System**: Pet mood calculated from stats (happy, sad, sick, energetic, tired, angry, neutral)
 
 ## Key Design Decisions
 
-### Why IndexedDB?
-- Large storage capacity (unlike localStorage)
-- Structured data storage (object stores, indexes)
-- Asynchronous operations (non-blocking)
-- Suitable for complex pet data and expense records
+### Why localStorage?
+- Simple and sufficient for save slot data
+- No external dependencies
+- Works offline
+- Easy to understand for judges
+- Suitable for competition scope
 
-### Why React Context over Redux?
-- Simpler for single-pet application
-- Less boilerplate code
-- Sufficient for application scope
-- Easier for judges to understand
+### Why GameCore Facade?
+- Unified API to all game systems
+- Single entry point for all game operations
+- Easier to test and maintain
+- Clear separation between UI and logic
 
 ### Why TypeScript?
 - Type safety catches errors at compile time
@@ -123,35 +183,123 @@ TamaTracky/
 
 ## Module Responsibilities
 
-### Pet Class (`src/lib/pet.ts`)
-- Manages all pet state (stats, money, expenses)
-- Provides pet care action methods (feed, play, rest, clean, vet)
-- Handles expense tracking automatically
-- Provides serialization for persistence
+### Game Core (`GameCore.ts`)
+- Unified facade for all game operations
+- Exports all game functions and constants as a single object
+- Provides single API for components
+- Delegates to specialized modules (pet, actions, shop, badges, etc.)
+- Re-exports types for convenience
 
-### Database Module (`src/lib/db.ts`)
-- Abstracts IndexedDB operations
-- Provides savePetState(), loadPetState(), listPets()
-- Handles database schema and migrations
-- Error handling and validation
+### Game Hook (`useGameCore.ts`)
+- React hook that wraps GameCore
+- Manages pet state with useState
+- Loads current save slot from localStorage on mount
+- Applies time decay automatically
+- Auto-saves on state changes
+- Provides loading states
+- Exposes all GameCore functions and state to components
 
-### Validation Module (`src/lib/validation.ts`)
+### Pet Module (`core/pet.ts`)
+- Pet creation (`createPet`)
+- XP and age stage management (`giveXP`, `checkEvolution`)
+- Stat decay calculations (`applyTimeDecay`)
+- Age progression logic (`acknowledgeEvolution`)
+- Care score calculation (`getCareScore`)
+- Mood updates (`updateMood`)
+
+### Storage Module (`core/storage.ts`)
+- Save slot management (save/load/delete)
+- Slot listing and metadata
+- localStorage abstraction
+- Migration of old save formats
+
+### Demo Module (`core/demo.ts`)
+- Demo mode seed data generation
+- Realistic 30-day scenario creation
+- Demo mode initialization and reset
+
+### Data Module (`game/data.ts`)
+- Type definitions (PetData, ShopItem, Badge, PetType, AgeStage, Stats, etc.)
+- Static game data (store items, quest templates, badge definitions, task definitions)
+- Constants (WEEKLY_ALLOWANCE_AMOUNT, ALLOWANCE_COOLDOWN_MS, DAILY_CHECKIN_COINS_MIN/MAX, DAILY_CHECKIN_XP)
+- Helper functions:
+  - `getAgeStage(xp)` - Single source of truth for age stage calculation
+  - `getPetEmoji(petType, ageStage)` - Pet emoji based on type and stage
+  - `AGE_LABELS` - Age stage labels (Baby, Young, Adult, Mature)
+
+### Actions Module (`core/actions.ts`)
+- Pet care actions (feed, play, rest, clean, visitVet)
+- Stat updates and validation
+- Inventory consumption (feed requires purchased food items)
+
+### Money Module (`core/money.ts`)
+- Coin economy (addCoins, earnCoins, giveCoins, spendCoins)
+- Chore system (doChore)
+- Daily reward system (dailyReward, isDailyRewardClaimed)
+
+### Shop Module (`core/shop.ts`)
+- Store system (shopItems array)
+- Item purchasing (buyItem)
+- Inventory management
+- Automatic expense logging on purchase
+
+### Badges Module (`core/badges.ts`)
+- Badge definitions (badgeDefinitions)
+- Badge evaluation logic (evaluateBadges)
+- Achievement tracking (awardBadges, awardBadge)
+- Badge retrieval (getBadge, getAllBadges)
+- Legacy compatibility (checkBadges)
+
+### Rewards Module (`core/rewards.ts`)
+- Mini-game reward application
+- Weekly allowance system (canClaimAllowance, claimAllowance, timeUntilAllowance)
+- Daily check-in rewards (isDailyCheckInAvailable, claimDailyCheckIn)
+- Income tracking for reports
+- Reward constants (WEEKLY_ALLOWANCE_AMOUNT, DAILY_CHECKIN_COINS_MIN/MAX, DAILY_CHECKIN_XP)
+
+### Expenses Module (`core/expenses.ts`)
+- Expense logging (logExpense)
+- Cost tracking (getTotalCareCost, getCareCostByCategory)
+- Expense categorization
+
+### Activities Module (`core/activities.ts`)
+- Free care actions (cleanFree, restFree)
+- Paid special activities (petSpaDay, trainingClass, parkTrip)
+- Activity expense logging
+
+### Tasks Module (`core/tasks.ts`)
+- Task definitions (tasks array)
+- Task retrieval (getAllTasks, getTask)
+- Task completion (completeTask)
+- Cooldown system (canDoTask, timeRemaining)
+
+### Quests Module (`core/quests.ts`)
+- Quest templates (getDefaultQuests)
+- Quest management (getQuests, updateQuestProgress)
+- Quest rewards (claimQuestReward)
+- Quest status (isQuestReady, getReadyQuests)
+
+### Utils Module (`core/utils.ts`)
+- Mood calculation (getMood, getMoodEmoji)
+- Pet emoji helper (getSpeciesEmoji - legacy compatibility)
+- Financial totals (getTotalExpenses, getTotalIncome)
+- CSV export (exportExpensesCSV)
+- Demo pet creation (createDemoPet)
+- Stat clamping (clamp)
+
+### Validation Module (`core/validation.ts`)
 - Input validation for pet names, numbers, purchases
-- Both syntactic (format) and semantic (logical) validation
-- Consistent error messages
-- Reusable validation functions
+- Syntactic and semantic validation
 
-### Context Provider (`src/contexts/PetContext.tsx`)
-- Global pet state management
-- Automatic loading of first saved pet
-- Provides pet, setPet, savePet functions
-- Loading state management
+### Types Module (`core/types.ts`)
+- TypeScript type definitions (PetData, ShopItem, Badge, SlotData, GameState, Stats, MiniGameReward, etc.)
+- Shared types used across modules
 
 ## Performance Considerations
 
 - **Memoization**: useMemo for expensive computations (filtered expenses, statistics)
 - **Lazy Loading**: Components loaded on-demand via React Router
-- **Efficient Re-renders**: New Pet instances only created when state changes
+- **Efficient Re-renders**: State updates only trigger necessary re-renders
 - **Chart Optimization**: Chart.js configured for responsive rendering
 
 ## Security Considerations
@@ -165,7 +313,7 @@ TamaTracky/
 
 - **Modern Browsers**: Chrome, Firefox, Safari, Edge (latest versions)
 - **PWA Support**: Installable on mobile and desktop
-- **IndexedDB**: Required for data persistence
+- **localStorage**: Required for data persistence
 - **ES6+ Features**: Requires modern JavaScript support
 
 ## Build and Deployment
@@ -177,9 +325,7 @@ TamaTracky/
 
 ## Future Enhancements
 
-- Multiple pets support
 - Cloud sync functionality
 - Social features (share pets, compare costs)
 - Advanced analytics and predictions
 - Mobile app versions (React Native)
-

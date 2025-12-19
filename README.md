@@ -16,7 +16,7 @@ Tama Tracky is an educational virtual pet game that teaches financial responsibi
 - **Demo Mode**: Realistic 30-day seed data for presentations
 - **Offline FAQ Assistant**: Intelligent intent-matching help system with curated answer bank
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+ and npm
@@ -65,12 +65,12 @@ src/
 Tama Tracky follows a **clean, modular architecture**:
 
 - **Core Logic** (`core/`): Pure TypeScript modules (no React dependencies)
-  - `pet.ts` - Pet lifecycle, stats, XP, evolution
+  - `pet.ts` - Pet lifecycle, stats, XP, age progression
   - `actions.ts` - Pet care actions (feed, play, rest, clean, visitVet)
   - `money.ts` - Coin economy (earn, spend, chores)
   - `shop.ts` - Store system (buy items, inventory)
   - `expenses.ts` - Expense logging and cost tracking
-  - `storage.ts` - Persistence (IndexedDB save/load)
+  - `storage.ts` - Persistence (localStorage save/load)
   - `badges.ts` - Achievement system
   - `quests.ts` - Daily quest system
   - `tasks.ts` - Task system with cooldowns
@@ -80,6 +80,9 @@ Tama Tracky follows a **clean, modular architecture**:
   - `utils.ts` - General utilities (mood, CSV export, totals)
   - `validation.ts` - Input validation
   - `types.ts` - TypeScript type definitions
+
+- **Game Data** (`game/`): Static data and type definitions
+  - `data.ts` - Type definitions, store items, quests, badges, constants, helper functions
 
 - **UI Components** (`components/`, `pages/`): React components for rendering
   - `NavBar.tsx` - Navigation bar
@@ -96,39 +99,15 @@ Tama Tracky follows a **clean, modular architecture**:
 - **React Hook** (`useGameCore.ts`): State management and auto-save
 - **Data Layer** (`data/`, `game/`): Static game data and type definitions
 
-## 🎯 Demo Path for Judges
+## 🎯 Demo Path
 
 1. **Start**: Home page → Click "DEMO MODE" button (creates realistic 30-day scenario)
-2. **Dashboard**: View pet stats, mood, evolution stage
-3. **Tasks**: Care & Tasks page → Show Daily Quests (coins + XP rewards)
-4. **Store**: Pet Store → Purchase an item → See expense automatically logged
-5. **Reports**: Money Reports → Click "🎯 JUDGE MODE" button → See comprehensive financial summary with charts
-6. **Help**: Help & FAQ → Ask "Why is my pet sad?" → See intelligent offline response
-7. **Achievements**: Badges page → See achievement system with retro styling
-
-## 🎯 FBLA Rubric Alignment
-
-### Code Quality (9-10/10 "Exceeds Expectations")
-- ✅ **Comments**: Logical, useful, and complete (judge-friendly explanations)
-- ✅ **Organization**: Well-named, purpose-driven functions/modules
-- ✅ **Structure**: Easy to read, understand, and maintain (clean programming practices)
-- ✅ **Modularity**: Clear separation of concerns (core logic vs UI rendering)
-- ✅ **Validation**: Comprehensive input validation throughout
-- ✅ **Error Handling**: Graceful error handling
-
-### Functionality (9-10/10 "Exceeds Expectations")
-- ✅ All core features implemented and functional
-- ✅ Comprehensive validation and error handling
-- ✅ Robust data storage and persistence (IndexedDB)
-- ✅ Financial tracking (expenses, income, reports)
-- ✅ Save/load system with 3 slots
-- ✅ Demo mode for presentations
-
-### Documentation (9-10/10 "Exceeds Expectations")
-- ✅ Code is well-documented with clear comments
-- ✅ Project documentation is comprehensive
-- ✅ Architecture is clearly explained
-- ✅ Judge-friendly explanations throughout
+2. **Dashboard**: View pet stats, mood, age stage (Baby/Young/Adult/Mature)
+3. **Tasks**: Tasks page → Show Daily Quests (coins + XP rewards) → Complete tasks
+4. **Store**: Store page → Purchase an item → See expense automatically logged
+5. **Reports**: Reports page → View financial summary with charts and breakdowns
+6. **Help**: Help page → Ask "Why is my pet sad?" → See intelligent offline response
+7. **Achievements**: Achievements page → See badge system with retro styling
 
 ## 🛠️ Technology Stack
 
@@ -136,24 +115,16 @@ Tama Tracky follows a **clean, modular architecture**:
 - **TypeScript**: Type safety
 - **Vite**: Build tool
 - **React Router**: Client-side routing
-- **IndexedDB**: Browser-based storage
+- **localStorage**: Browser-based storage
 - **Chart.js**: Data visualization
 - **Tailwind CSS**: Styling
 
 ## 📚 Documentation
 
 - **[QUICK_START.md](./QUICK_START.md)**: How to run + demo in 3-5 minutes
-- **[FBLA_JUDGE_SCORECARD.md](./FBLA_JUDGE_SCORECARD.md)**: Rubric scoring with points
-- **[FBLA_JUDGE_COMMENTS.md](./FBLA_JUDGE_COMMENTS.md)**: Judge narrative evaluation
-- **[FBLA_FINAL_READINESS_REPORT.md](./FBLA_FINAL_READINESS_REPORT.md)**: Final checklist
-- **[FINAL_MINIMIZATION_REPORT.md](./FINAL_MINIMIZATION_REPORT.md)**: Code cleanup summary
-- **[PRESENTATION_MATERIALS.md](./PRESENTATION_MATERIALS.md)**: 7-minute script + demo path + Q&A
+- **[docs/architecture.md](./docs/architecture.md)**: System architecture and technical details
+- **[docs/design_notes.md](./docs/design_notes.md)**: Design decisions and rationale
+- **[docs/attributions.md](./docs/attributions.md)**: Third-party library credits
 
-## 📝 License
 
 This project is created for FBLA Introduction to Programming competition.
-
----
-
-*Built with ❤️ for FBLA Introduction to Programming*
-

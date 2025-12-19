@@ -76,13 +76,14 @@ This document provides proper attribution for all third-party libraries, tools, 
 
 ### Data Persistence
 
-#### idb (IndexedDB Wrapper)
-- **Library**: idb
-- **Version**: 8.0.0
-- **License**: Apache-2.0
-- **Website**: https://github.com/jakearchibald/idb
-- **Usage**: Promise-based wrapper for IndexedDB
-- **Attribution**: Copyright 2016, Jake Archibald
+#### Browser localStorage API
+- **API**: Web Storage API (localStorage)
+- **Standard**: W3C Web Storage API
+- **Usage**: Client-side storage for save slots and game data
+- **Implementation**: Native browser API, no external library required
+- **Attribution**: W3C Web Storage API standard, implemented by all modern browsers
+
+**Note**: The `idb` package is listed in package.json but is not currently used in the codebase. The project uses the native localStorage API directly via `core/storage.ts`.
 
 ### Data Visualization
 

@@ -2,25 +2,48 @@
 
 ## Design Philosophy
 
-Tama Tracky is designed to be both educational and engaging. It teaches users about the real costs of pet ownership while providing an enjoyable virtual pet experience.
+Tama Tracky is designed to be both educational and engaging. It teaches users about the real costs of pet ownership while providing an enjoyable virtual pet experience. The design prioritizes clarity, simplicity, and judge-friendly explanations.
+
+## Pet System Design
+
+### Pet Types (Simplified)
+- **3 Types Only**: Cat, Dog, Rabbit
+- **Rationale**: Easy to explain to judges, clear visual distinction, simple selection
+- **Visual Representation**: Emoji-based placeholders (🐱 🐈 😺 😼 for cat, 🐶 🐕 😄 🐾 for dog, 🐰 🐇 😊 🌟 for rabbit)
+
+### Age Progression (Numeric Stages)
+- **4 Stages**: Baby (0), Young (1), Adult (2), Mature (3)
+- **XP Thresholds**: 
+  - 0 XP = Baby
+  - 20 XP = Young
+  - 60 XP = Adult
+  - 120 XP = Mature
+- **Single Function**: `getAgeStage(xp)` in `game/data.ts` is the ONLY function that determines age stage
+- **Rationale**: Simple, predictable, easy to explain. No complex evolution trees or element systems.
+
+### Pet Stats
+- **5 Core Stats**: Hunger, Happiness, Health, Energy, Cleanliness
+- **Range**: 0-100 for all stats
+- **Decay**: Stats decay over time based on elapsed time
+- **Care Actions**: Free actions (feed, play, rest, clean, visit vet) that restore stats
 
 ## User Experience Design
 
 ### Color Scheme
-- **Primary**: Blue/Indigo gradients - Trust, reliability
+- **Primary**: Warm browns and beiges (#6E5A47, #A67C52, #FAEEDC) - Retro, friendly
 - **Success**: Green - Positive actions, health
 - **Warning**: Yellow/Orange - Attention needed
 - **Danger**: Red - Critical states, expenses
 - **Accent**: Purple/Pink - Special features, demo mode
 
 ### Typography
-- **Headings**: Bold, large sizes for hierarchy
-- **Body**: Medium weight, readable sizes
-- **Labels**: Semibold for emphasis
-- **Consistent**: Same font family throughout (system fonts)
+- **Headings**: Pixel-style font for retro aesthetic
+- **Body**: Readable system fonts
+- **Labels**: Clear, uppercase for emphasis
+- **Consistent**: Same font family throughout
 
 ### Layout Principles
-- **Card-Based**: Information grouped in cards
+- **Card-Based**: Information grouped in retro-styled cards
 - **Spacing**: Generous whitespace for clarity
 - **Responsive**: Mobile-first design approach
 - **Grid System**: Consistent grid layouts
@@ -40,9 +63,10 @@ Tama Tracky is designed to be both educational and engaging. It teaches users ab
 - **Accessibility**: ARIA labels for screen readers
 
 ### PetAvatar Component
-- **Emotional States**: Visual representation of pet's mood
-- **Size Variants**: Different sizes for different contexts
-- **State Indicators**: Color-coded emotional state badges
+- **Type + Stage**: Displays pet emoji based on petType and ageStage
+- **Mood Display**: Shows mood emoji alongside pet emoji
+- **Size Variants**: Different sizes for different contexts (small, medium, large)
+- **State Indicators**: Visual representation of pet's emotional state
 
 ### ExpenseTable Component
 - **Sortable**: Default sort by most recent
@@ -56,33 +80,56 @@ Tama Tracky is designed to be both educational and engaging. It teaches users ab
 - **Pet Name**: Shows current pet name when available
 - **Responsive**: Adapts to screen size
 
+### PetHUD Component
+- **Collapsible**: Side drawer that can be toggled
+- **Always Accessible**: Quick access to pet stats from any page
+- **Compact**: Shows key info without taking too much space
+
 ## Page-Specific Design
 
 ### Home Page
-- **Hero Section**: Large logo and tagline
-- **Clear CTA**: Prominent "Start" button
+- **Save Slots**: Clear display of 3 save slots
 - **Demo Mode**: Easy access for presentations
 - **Quick Links**: Visual navigation cards
+
+### Start Here Page
+- **Onboarding**: Clear introduction to the game
+- **Instructions**: Step-by-step guide for new users
+- **Judge-Friendly**: Explains what judges should look for
+
+### Create Pet Page
+- **Simple Selection**: 3 pet type options (Cat, Dog, Rabbit)
+- **Name Validation**: Real-time validation feedback
+- **Clear CTAs**: Obvious "Create Pet" button
 
 ### Dashboard
 - **Status Overview**: All stats visible at once
 - **Action Buttons**: Large, colorful, obvious
 - **Money Display**: Prominent coin balance
-- **Pet Avatar**: Visual pet representation
+- **Pet Avatar**: Visual pet representation with mood
+- **Evolution Modal**: Shows when pet ages up
 
 ### Store
 - **Product Cards**: Clear pricing and descriptions
 - **Affordability**: Visual indication of what's affordable
 - **Categories**: Organized product display
+- **Expense Tracking**: Automatic expense logging
+
+### Tasks Page
+- **Daily Quests**: Rotating quest system
+- **Task List**: Cooldown-based tasks
+- **Rewards**: Clear coin and XP rewards
+- **Daily Check-In**: Popup modal for daily rewards
 
 ### Reports
+- **Summary Cards**: Total spent, earned, net, budget
 - **Multiple Views**: Charts and tables
-- **Filters**: Easy filtering controls
+- **Filters**: Easy filtering controls (date, category)
 - **Export**: One-click CSV export
-- **Statistics**: Key metrics at a glance
+- **Financial Analysis**: Category and source breakdowns
 
 ### Help Page
-- **Q&A Bot**: Interactive help system
+- **Q&A Bot**: Interactive help system with intent matching
 - **FAQ Section**: Common questions answered
 - **Quick Links**: Easy navigation
 
@@ -91,20 +138,23 @@ Tama Tracky is designed to be both educational and engaging. It teaches users ab
 ### Judge-Friendly Features
 - **Clear Instructions**: Every screen has guidance
 - **Help System**: Comprehensive help available
-- **Demo Mode**: Easy demonstration capability
+- **Demo Mode**: Easy demonstration capability with realistic data
 - **Visual Feedback**: Clear indication of actions
+- **Simple Pet System**: 3 types, 4 age stages - easy to explain
 
 ### Code Quality Indicators
 - **Comments**: Extensive inline documentation
 - **Modular Structure**: Clear file organization
 - **Consistent Naming**: Predictable naming conventions
 - **Type Safety**: TypeScript throughout
+- **Single Source of Truth**: Age stage determined by one function
 
 ### User Experience Indicators
 - **Intuitive Navigation**: Obvious navigation paths
 - **Error Prevention**: Validation before actions
 - **Error Messages**: Clear, helpful error messages
 - **Loading States**: Never leave users wondering
+- **Onboarding**: Start Here page guides new users
 
 ## Accessibility Considerations
 
@@ -150,7 +200,7 @@ Tama Tracky is designed to be both educational and engaging. It teaches users ab
 
 ## Color Psychology
 
-- **Blue**: Trust, reliability, technology
+- **Brown/Beige**: Warmth, friendliness, retro aesthetic
 - **Green**: Health, growth, positive actions
 - **Yellow**: Energy, happiness, attention
 - **Red**: Urgency, expenses, health alerts
@@ -177,3 +227,15 @@ Tama Tracky is designed to be both educational and engaging. It teaches users ab
 - **Labels**: Clear axis labels and legends
 - **Responsive**: Charts adapt to container size
 
+## Financial System Design
+
+### Cost-of-Care Tracking
+- **Automatic Logging**: All purchases automatically logged as expenses
+- **Category Tracking**: Expenses categorized (Food, Health, Toys, Supplies, Activities, Other)
+- **Running Totals**: Real-time calculation of total spent
+- **Income Tracking**: Separate tracking of income sources (Tasks, Quests, Allowance, Check-In)
+
+### Economy Balance
+- **Realistic Ratios**: Income and expenses balanced for realistic gameplay
+- **Multiple Income Sources**: Tasks, daily quests, weekly allowance, daily check-in
+- **Budget Awareness**: Budget limit feature with progress tracking
