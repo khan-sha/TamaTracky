@@ -3,13 +3,7 @@
  * 
  * PURPOSE: Visualizes expense data using Chart.js for trend analysis.
  * Provides multiple chart types (Line, Bar, Doughnut) for different insights.
- * 
- * KEY FEATURES:
- * - Line chart: Shows spending trends over time
- * - Bar chart: Compares spending by category
- * - Doughnut chart: Shows category proportions
- * - Responsive design with Chart.js
- * 
+ * ][]
  * ORGANIZATION: Wrapper around Chart.js components with data transformation.
  * Receives expense data from Reports page and formats it for chart display.
  * Chart type selection handled by parent component for flexibility.

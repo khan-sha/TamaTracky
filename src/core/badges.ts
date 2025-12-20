@@ -3,15 +3,10 @@
  * 
  * PURPOSE: Achievement system that rewards players for milestones and good care.
  * Badges teach responsibility and provide positive reinforcement.
- * 
  * KEY FUNCTIONS:
  * - evaluateBadges: Checks all achievement criteria
  * - awardBadge: Adds badge to pet's collection
  * - getBadge: Retrieves badge definition
- * 
- * ORGANIZATION: Badge definitions stored in badgeDefinitions object.
- * Evaluation logic centralized in evaluateBadges() for maintainability.
- * This structure makes it easy to add new badges and understand requirements.
  */
 
 import { PetData, Badge } from './types'
@@ -22,13 +17,6 @@ import { getAgeStage } from '../game/data'
 
 /**
  * Badge Data Structure
- * 
- * Each badge includes:
- * - id: Unique identifier
- * - name: Display name
- * - description: How to earn it
- * - emoji: Icon for display
- * - category: Badge category for filtering
  */
 export const badgeDefinitions: Record<string, Badge> = {
   first_purchase: {

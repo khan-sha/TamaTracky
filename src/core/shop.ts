@@ -1,12 +1,5 @@
 /**
  * Shop System Module
- * 
- * This module handles the in-game shop:
- * - Shop item definitions
- * - Purchasing items
- * - Applying item effects to pet stats
- * 
- * RESPONSIBILITY: Shop functionality and item management
  */
 
 import { PetData, ShopItem } from './types'
@@ -31,15 +24,7 @@ export interface PurchaseResult {
 }
 
 /**
- * Buys an item from the shop
- * 
- * FBLA COMPLIANT PURCHASE FLOW:
- * 1. Check balance (if coins < item.price, return error)
- * 2. Subtract coins (coins -= item.price)
- * 3. Add item to inventory (inventory[item.id]++)
- * 4. Log expense (with type and category for reports)
- * 5. Apply item effect to pet stats
- * 
+ * Buys an item from the sho
  * @param pet - Pet making the purchase
  * @param item - Item to purchase
  * @returns Purchase result with updated pet and expense record

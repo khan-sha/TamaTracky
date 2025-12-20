@@ -53,14 +53,18 @@ function QABot() {
   /**
    * Handles form submission with intent matching
    */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent, questionOverride?: string) => {
+    if (e) {
+      e.preventDefault()
+    }
     
-    if (!question.trim() || isLoading) {
+    const questionToSubmit = (questionOverride || question).trim()
+    
+    if (!questionToSubmit || isLoading) {
       return
     }
     
-    const userMessage = question.trim()
+    const userMessage = questionToSubmit
     
     // Add user question to conversation
     setConversation(prev => [...prev, { type: 'user', message: userMessage }])
@@ -143,7 +147,8 @@ function QABot() {
     'What are the pet stats?',
     'How does evolution work?',
     'How do I view my expenses?',
-    'What is demo mode?'
+    'What is demo mode?',
+    'Why is my pet sad?'
   ]
   
   return (
@@ -163,14 +168,9 @@ function QABot() {
           {suggestedQuestions.map((q, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => {
-                setQuestion(q)
-                // Auto-submit if question is set
-                setTimeout(() => {
-                  const event = new Event('submit', { bubbles: true, cancelable: true })
-                  const form = document.querySelector('form')
-                  if (form) form.dispatchEvent(event)
-                }, 100)
+                handleSubmit(undefined, q)
               }}
               className="px-3 py-1 text-xs retro-panel bg-white/20 hover:bg-white/30 text-white pixel-body border border-white/30"
               title={`Click to ask: ${q}`}

@@ -13,21 +13,40 @@
 import { PetData, SlotData } from './types'
 // NOTE: decayStats removed from imports - decay is handled globally in useGameCore
 
+// Maximum number of expense/income records to keep (prevents localStorage quota exceeded)
+const MAX_RECORDS = 1000
+
+/**
+ * Prunes arrays to keep only the most recent N records
+ * Sorts by timestamp (newest first) and keeps the most recent ones
+ */
+function pruneRecords<T extends { timestamp: number }>(records: T[], maxRecords: number): T[] {
+  if (records.length <= maxRecords) return records
+  // Sort by timestamp descending (newest first) and take the most recent
+  return [...records]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, maxRecords)
+    .reverse() // Reverse back to chronological order (oldest first)
+}
+
 /**
  * Saves all game data to a save slot
  * 
  * Each slot stores:
  * - Pet data
- * - Expenses history
- * - Income history
+ * - Expenses history (pruned to prevent quota exceeded)
+ * - Income history (pruned to prevent quota exceeded)
  * - Quests (future feature)
  * - Badges earned
  * - Metadata (creation date, last played)
  * 
+ * IMPORTANT: This function handles localStorage quota exceeded errors gracefully
+ * by automatically pruning old data when needed.
+ * 
  * @param slot - Slot number (1, 2, or 3)
  * @param pet - Pet data to save (or null to clear slot)
- * @param expenses - Expense records
- * @param income - Income records
+ * @param expenses - Expense records (will be merged with existing)
+ * @param income - Income records (will be merged with existing)
  */
 export function saveAll(
   slot: 1 | 2 | 3, 
@@ -41,12 +60,41 @@ export function saveAll(
   lastAllowanceClaim: number | undefined = undefined,
   lastCheckIn: string | undefined = undefined
 ): void {
-  // Merge pet expenses with slot expenses (for cost-of-care tracking)
-  const allExpenses = pet?.expenses || []
-  const mergedExpenses = [...allExpenses, ...expenses]
-  
   // Load existing data to preserve quests, taskState, guideChecklist, and meta.demo flag
   const existing = loadAll(slot)
+  
+  // Merge expenses: combine slot-level expenses with new expenses from pet.expenses and parameter
+  // Only add expenses that aren't already in the existing list (avoid duplicates)
+  const existingExpenseIds = new Set((existing?.expenses || []).map(e => e.id))
+  
+  // Extract new expenses from pet.expenses (if pet has expenses)
+  const petExpenses = pet?.expenses || []
+  const petNewExpenses = petExpenses.filter(e => e.id && !existingExpenseIds.has(e.id))
+  
+  // Combine parameter expenses with pet expenses
+  const paramNewExpenses = expenses.filter(e => e.id && !existingExpenseIds.has(e.id))
+  
+  // Merge all new expenses
+  const allNewExpenses = [...petNewExpenses, ...paramNewExpenses]
+  // Remove duplicates by ID (in case pet.expenses and expenses parameter overlap)
+  const uniqueNewExpenses = Array.from(
+    new Map(allNewExpenses.map(e => [e.id, e])).values()
+  )
+  
+  const allExpenses = [...(existing?.expenses || []), ...uniqueNewExpenses]
+  
+  // Merge income: only add new income records
+  const existingIncomeIds = new Set((existing?.income || []).map(i => i.id))
+  const newIncome = income.filter(i => i.id && !existingIncomeIds.has(i.id))
+  const allIncome = [...(existing?.income || []), ...newIncome]
+  
+  // Prune expenses and income to prevent quota exceeded errors
+  const prunedExpenses = pruneRecords(allExpenses, MAX_RECORDS)
+  const prunedIncome = pruneRecords(allIncome, MAX_RECORDS)
+  
+  // Clear pet.expenses to avoid duplication (expenses are stored at slot level)
+  const petToSave = pet ? { ...pet, expenses: [] } : null
+  
   const questsToSave = quests !== null ? quests : (existing?.quests || [])
   const badgesToSave = badges.length > 0 ? badges : (pet?.badges || existing?.badges || [])
   const taskStateToSave = taskState !== null ? taskState : (existing?.taskState || [])
@@ -63,9 +111,9 @@ export function saveAll(
   const checkInDate = lastCheckIn !== undefined ? lastCheckIn : (existing?.meta?.lastCheckIn)
   
   const data: SlotData = {
-    pet,
-    expenses: mergedExpenses,
-    income,
+    pet: petToSave,
+    expenses: prunedExpenses,
+    income: prunedIncome,
     quests: questsToSave,
     badges: badgesToSave,
     taskState: taskStateToSave,
@@ -81,9 +129,61 @@ export function saveAll(
     }
   }
   
-  // This saves everything inside the chosen slot
-  localStorage.setItem(`tama_slot_${slot}`, JSON.stringify(data))
-  localStorage.setItem('tama_current_slot', slot.toString())
+  try {
+    // Try to save the data
+    const jsonData = JSON.stringify(data)
+    localStorage.setItem(`tama_slot_${slot}`, jsonData)
+    localStorage.setItem('tama_current_slot', slot.toString())
+  } catch (error: any) {
+    // If quota exceeded, try pruning more aggressively and retry
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      console.warn('localStorage quota exceeded, attempting aggressive pruning...')
+      
+      // More aggressive pruning: keep only 500 records
+      const aggressivePrunedExpenses = pruneRecords(allExpenses, 500)
+      const aggressivePrunedIncome = pruneRecords(allIncome, 500)
+      
+      const smallerData: SlotData = {
+        ...data,
+        expenses: aggressivePrunedExpenses,
+        income: aggressivePrunedIncome
+      }
+      
+      try {
+        const jsonData = JSON.stringify(smallerData)
+        localStorage.setItem(`tama_slot_${slot}`, jsonData)
+        localStorage.setItem('tama_current_slot', slot.toString())
+        console.warn('Successfully saved with aggressive pruning')
+      } catch (retryError: any) {
+        // If still failing, try saving only essential data
+        console.error('Failed to save even with aggressive pruning. Saving minimal data...', retryError)
+        
+        const minimalData: SlotData = {
+          pet: petToSave,
+          expenses: pruneRecords(allExpenses, 100), // Keep only 100 most recent
+          income: pruneRecords(allIncome, 100), // Keep only 100 most recent
+          quests: questsToSave,
+          badges: badgesToSave,
+          taskState: taskStateToSave,
+          guideChecklist: guideChecklistToSave,
+          meta: data.meta
+        }
+        
+        try {
+          localStorage.setItem(`tama_slot_${slot}`, JSON.stringify(minimalData))
+          localStorage.setItem('tama_current_slot', slot.toString())
+          console.warn('Saved with minimal data (100 records max)')
+        } catch (finalError) {
+          console.error('Failed to save even minimal data. localStorage may be full.', finalError)
+          // Don't throw - allow the app to continue running
+          // User can manually clear localStorage if needed
+        }
+      }
+    } else {
+      // Re-throw non-quota errors
+      throw error
+    }
+  }
 }
 
 /**
@@ -130,12 +230,29 @@ export function loadAll(slot: 1 | 2 | 3): SlotData | null {
         }
       }
       
-      // Ensure expenses have IDs and types (for backward compatibility)
-      data.pet.expenses = data.pet.expenses.map(exp => ({
-        ...exp,
-        id: exp.id || `expense_${exp.timestamp}_${Math.random().toString(36).substring(2, 9)}`,
-        type: exp.type || 'care' as const
-      }))
+      // Populate pet.expenses from slot-level expenses (for backward compatibility and reporting)
+      // This is a reference copy - expenses are stored at slot level to avoid duplication
+      // Filter out "earning" type expenses as they're not valid for PetData.expenses
+      if (data.expenses && data.expenses.length > 0) {
+        data.pet.expenses = data.expenses
+          .filter(exp => exp.type !== 'earning') // Remove "earning" type (income is tracked separately)
+          .map(exp => ({
+            id: exp.id || `expense_${exp.timestamp}_${Math.random().toString(36).substring(2, 9)}`,
+            timestamp: exp.timestamp,
+            amount: exp.amount,
+            description: exp.description,
+            type: exp.type as 'food' | 'toy' | 'healthcare' | 'supplies' | 'care' | 'purchase' | 'activity',
+            itemName: exp.itemName
+          }))
+      } else {
+        // Ensure expenses array exists even if empty
+        data.pet.expenses = (data.pet.expenses || [])
+          .map(exp => ({
+            ...exp,
+            id: exp.id || `expense_${exp.timestamp}_${Math.random().toString(36).substring(2, 9)}`,
+            type: (exp.type || 'care') as 'food' | 'toy' | 'healthcare' | 'supplies' | 'care' | 'purchase' | 'activity'
+          }))
+      }
     }
     
     return data

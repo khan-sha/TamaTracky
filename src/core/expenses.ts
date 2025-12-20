@@ -1,17 +1,8 @@
-/**
+/**][]
  * Expense System Module
  * 
  * PURPOSE: Tracks all pet care expenses for cost-of-care education.
  * Every action that costs coins logs an expense here for Reports.
- * 
- * KEY FUNCTIONS:
- * - logExpense: Records expense with category, amount, description
- * - getTotalCareCost: Sums all expenses
- * - getCareCostByCategory: Groups expenses by type
- * 
- * ORGANIZATION: Simple, focused module with clear responsibility.
- * All expense logging goes through logExpense() for consistency.
- * This ensures Reports page shows accurate cost-of-care data.
  */
 
 import { PetData } from './types'

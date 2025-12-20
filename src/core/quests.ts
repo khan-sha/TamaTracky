@@ -2,20 +2,13 @@
  * Quest System Module
  * 
  * This module handles daily quests that reset every day.
- * Quests track progress and give rewards when completed.
- * 
- * RESPONSIBILITY: Daily quest tracking and rewards
+ * Quests track progress and give rewards when completed.[][p[]]
  */
 
 import { SlotData } from './types'
 
 /**
- * Quest Definition - A quest the user can complete
- * 
- * FBLA RUBRIC ALIGNMENT:
- * - Functions: Quest interface defines structure for quest data
- * - Conditionals: Quest completion logic uses conditionals to check progress vs goal
- * - Validation: Quest rewards are validated before applying (amount > 0, quest ready)
+ * Quest Definition - A quest the user can complete][]
  */
 export interface Quest {
   id: string
@@ -35,29 +28,6 @@ export interface QuestSystem {
 }
 
 /**
- * Gets default daily quests
- * 
- * This resets quests every day.
- * 
- * FBLA RUBRIC ALIGNMENT:
- * - Functions: getDefaultQuests() creates quest structure with rewards
- * - Each quest has both coinsReward and xpReward to teach dual reward system
- * - Reward scaling: Quests scale by difficulty to model real-life work value
- * 
- * REWARD SCALING BY DIFFICULTY:
- * - Easy quests (1-2 actions): 20 coins, 1 XP
- *   - Simple tasks like cleaning once
- * - Medium quests (multiple actions): 30 coins, 2-3 XP
- *   - Tasks requiring multiple steps like feeding 3 times
- * - Hard quests (multi-step/recovery): 40-50 coins, 4-5 XP
- *   - Complex tasks like health checks that require planning
- * 
- * FINANCIAL RESPONSIBILITY TEACHING:
- * - Higher difficulty = higher reward (models real work)
- * - Players learn that effort pays off
- * - Rewards are meaningful enough to afford basic care (Basic Food = 25 coins)
- * - Quest rewards can only be claimed once per day (prevents spam)
- * 
  * @returns Default quest structure with coins and XP rewards
  */
 export function getDefaultQuests(): QuestSystem {

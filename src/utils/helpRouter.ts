@@ -11,22 +11,6 @@
  * - Confidence Scoring: Calculates match quality (0-1 scale) similar to ML confidence
  * - Smart Routing: Routes to best answer based on confidence threshold
  * - Deterministic: Always returns same response for same input (reliable, testable)
- * 
- * JUDGE-FRIENDLY EXPLANATION:
- * This system demonstrates understanding of intelligent systems by:
- * 1. Analyzing patterns in user questions (keyword matching)
- * 2. Classifying intent (determining what user wants to know)
- * 3. Scoring confidence (how well the question matches an intent)
- * 4. Routing to appropriate response (similar to ML model inference)
- * 
- * All processing happens locally - no external APIs, no network calls.
- * Fast, reliable, and always available.
- * 
- * FBLA Requirements:
- * - Intelligent feature (simulates ML using pattern recognition)
- * - Clear, step-by-step instructions
- * - Educational content about cost-of-care
- * - Judge-friendly explanations
  */
 
 export interface IntentResult {
@@ -54,14 +38,6 @@ export interface FAQItem {
  * - Intent Classification: Matching keywords determines intent category
  * - Confidence Scoring: Number of matched keywords = confidence score
  * - Deterministic: Same input always produces same output (reliable, testable)
- * 
- * KEYWORD SCORING EXAMPLE:
- * If user input contains ["sad", "unhappy", "mood"] → matches pet_mood intent
- * The system counts how many keywords appear in the input and calculates
- * a confidence score based on the ratio of matched keywords to total keywords.
- * 
- * This approach demonstrates understanding of intelligent systems without
- * requiring actual machine learning libraries or external APIs.
  */
 const FAQ_KNOWLEDGE_BASE: FAQItem[] = [
   {
@@ -93,7 +69,6 @@ const FAQ_KNOWLEDGE_BASE: FAQItem[] = [
 
 /**
  * Calculates Intent Confidence Score - Simulates ML Confidence
- * 
  * This function simulates machine learning confidence scoring using keyword matching:
  * 1. Pattern Matching: Searches for keyword patterns in user input
  * 2. Feature Extraction: Counts how many keywords match (like ML features)
@@ -129,10 +104,27 @@ function calculateConfidence(question: string, keywords: string[]): number {
     .replace(/saving/g, 'save')
     .replace(/earning/g, 'earn')
   
+  // Separate single-word keywords from multi-word phrases
+  const singleKeywords: string[] = []
+  const phraseKeywords: string[] = []
+  
+  keywords.forEach(keyword => {
+    if (keyword.split(/\s+/).length > 1) {
+      phraseKeywords.push(keyword)
+    } else {
+      singleKeywords.push(keyword)
+    }
+  })
+  
   // Count how many keywords match (simulates feature extraction)
   const matchedKeywords = keywords.filter(keyword => {
     const lowerKeyword = keyword.toLowerCase()
     return normalizedQuestion.includes(lowerKeyword)
+  })
+  
+  // Count phrase matches separately (these are stronger signals)
+  const matchedPhrases = phraseKeywords.filter(phrase => {
+    return normalizedQuestion.includes(phrase.toLowerCase())
   })
   
   // Calculate confidence: ratio of matches to total keywords
@@ -141,7 +133,22 @@ function calculateConfidence(question: string, keywords: string[]): number {
   
   // Boost confidence if multiple keywords match (strong signal)
   // Simulates ML behavior where multiple matching features increase confidence
-  const boost = matchedKeywords.length > 1 ? 0.2 : 0
+  let boost = 0
+  if (matchedKeywords.length > 1) {
+    boost = 0.2
+  }
+  
+  // Extra boost for phrase matches (exact phrase matches are very strong signals)
+  // This ensures questions like "Why is my pet sad?" match with high confidence
+  if (matchedPhrases.length > 0) {
+    boost += 0.3 // Strong boost for phrase matches
+  }
+  
+  // If we have at least one key phrase match, ensure minimum confidence
+  // This is a safety net to guarantee phrase matches exceed the threshold
+  if (matchedPhrases.length > 0 && matchRatio + boost < 0.6) {
+    boost = Math.max(boost, 0.6 - matchRatio + 0.1) // Ensure it exceeds threshold
+  }
   
   // Return confidence score (0-1), capped at 1.0
   return Math.min(1.0, matchRatio + boost)

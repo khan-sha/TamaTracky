@@ -1,30 +1,5 @@
-/**
- * Tasks System Module
- * 
- * PURPOSE: Task-based earning system that teaches responsibility through chores.
- * 
- * JUDGE-FRIENDLY EXPLANATION:
- * - Tasks give BOTH coins (for spending) AND XP (for pet evolution/age progression)
- * - Tasks also affect pet vitals (happiness, cleanliness, energy, health, hunger)
- * - This dual reward system teaches that work improves both finances and pet care
- * - Tasks have cooldowns to prevent spam and encourage thoughtful engagement
- * 
- * KEY FEATURES:
- * - Simple earning tasks (chores, training, walking, grooming)
- * - Each task gives coins, XP, and stat improvements
- * - All earnings logged for cost-of-care reports
- * - Cooldowns prevent unlimited instant earnings (teaches budgeting)
- */
-
-/**
- * Task Definition - A task the user can complete to earn coins, XP, and stat improvements
- * 
- * Tasks have cooldowns so users can't earn unlimited coins instantly.
- * This mimics real life chores and encourages budgeting.
- * Reward is only added when the user claims it.
- * 
- * FBLA REQUIREMENT: Tasks should give BOTH XP (for evolution) and stat changes (for pet care).
- */
+// FBLA REQUIREMENT: Tasks should give BOTH XP (for evolution) and stat changes (for pet care).
+ 
 export interface Task {
   id: string
   name: string
@@ -43,18 +18,6 @@ export interface Task {
   cooldownSeconds: number // Cooldown time in seconds
 }
 
-/**
- * All available tasks
- * 
- * These are simple tasks the user can do to earn coins.
- * Tasks simulate responsibility like chores (FBLA requirement).
- * 
- * FINANCIAL RESPONSIBILITY TEACHING:
- * - All tasks give meaningful rewards (minimum 15 coins)
- * - No "micro earnings" that feel pointless
- * - Tasks have cooldowns to prevent spam
- * - Rewards scale with effort (longer cooldown = higher reward)
- */
 export const tasks: Task[] = [
   {
     id: 'clean_room',
