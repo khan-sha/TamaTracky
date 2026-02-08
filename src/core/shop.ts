@@ -1,36 +1,16 @@
-/**
- * Shop System Module
- */
-
 import { PetData, ShopItem } from './types'
 import { clamp } from './utils'
 import { storeItems } from '../data/storeItems'
 
-/**
- * All available shop items
- * 
- * IMPORTANT: Items are imported from src/data/storeItems.ts (single source of truth).
- * This ensures Store UI and demo generator use the same items for consistency.
- */
 export { storeItems as shopItems }
 
-/**
- * Purchase Result - Return type for buyItem
- */
 export interface PurchaseResult {
   success: boolean
   pet: PetData
   message: string
 }
 
-/**
- * Buys an item from the sho
- * @param pet - Pet making the purchase
- * @param item - Item to purchase
- * @returns Purchase result with updated pet and expense record
- */
 export function buyItem(pet: PetData, item: ShopItem): PurchaseResult {
-  // This checks if player can afford the item
   if (pet.coins < item.price) {
     return {
       success: false,
@@ -40,27 +20,15 @@ export function buyItem(pet: PetData, item: ShopItem): PurchaseResult {
   }
   
   const newPet = { ...pet }
-  
-  // This subtracts coins safely
   newPet.coins -= item.price
   
-  // Ensure inventory exists
   if (!newPet.inventory) {
     newPet.inventory = {}
   }
   
-  // Add item to inventory (FBLA requirement)
-  // IMPORTANT: Food items are NOT consumed immediately - they go to inventory
-  // The user must use the "Feed" action to consume food from inventory
-  // This teaches financial responsibility by separating purchase from consumption
   newPet.inventory[item.id] = (newPet.inventory[item.id] || 0) + 1
-  
-  // Apply item effect to pet stats (only for non-food items)
-  // Food items are NOT consumed on purchase - they must be fed separately
-  // This teaches planning: users must buy food BEFORE feeding
   newPet.stats = { ...pet.stats }
   
-  // Non-food items apply effects immediately
   if (item.category === 'toys') {
     if (item.name.includes('Puzzle')) {
       newPet.stats.happiness = clamp(pet.stats.happiness + 20)
@@ -85,12 +53,9 @@ export function buyItem(pet: PetData, item: ShopItem): PurchaseResult {
       newPet.stats.cleanliness = clamp(pet.stats.cleanliness + 15)
     }
   } else if (item.category === 'activity') {
-    // Activity passes don't give immediate stats, they're used in Activities tab
     newPet.stats.happiness = clamp(pet.stats.happiness + 2)
   }
   
-  // This logs the care cost for reports (FBLA requirement)
-  // Determine expense type based on category
   let expenseType: 'food' | 'toy' | 'healthcare' | 'supplies' | 'purchase' | 'activity' = 'purchase'
   if (item.category === 'food') expenseType = 'food'
   else if (item.category === 'toys') expenseType = 'toy'
@@ -98,14 +63,12 @@ export function buyItem(pet: PetData, item: ShopItem): PurchaseResult {
   else if (item.category === 'supplies') expenseType = 'supplies'
   else if (item.category === 'activity') expenseType = 'activity'
   
-  // This logs the expense with proper category for cost-of-care tracking
-  // FBLA REQUIREMENT: All expenses must be logged with correct category for reports
   const expenseId = `expense_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
   
   newPet.expenses = [...pet.expenses, {
     id: expenseId,
     timestamp: Date.now(),
-    amount: item.price, // Positive amount (FBLA requirement)
+    amount: item.price,
     description: `Purchased ${item.name}`,
     type: expenseType,
     itemName: item.name

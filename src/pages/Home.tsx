@@ -174,6 +174,9 @@ function Home() {
           <div className="game-title-panel">
             <h1 className="game-title">TAMA TRACKY</h1>
             <p className="game-subtitle">Virtual Pet Care</p>
+            <p className="text-xs pixel-body mt-2" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              💡 New? Click "START NEW GAME" → Choose a slot → Create your pet
+            </p>
           </div>
           
           {/* Animated Pet Emoji */}

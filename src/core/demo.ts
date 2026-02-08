@@ -621,7 +621,22 @@ export function startDemoMode(slot: 1 | 2 | 3 = 1): void {
  * @param slot - Save slot to reset (default: 1)
  */
 export function resetDemoMode(slot: 1 | 2 | 3 = 1): void {
-  startDemoMode(slot)
+  // Always delete and recreate, even if demo already exists
+  deleteSlot(slot)
+  localStorage.setItem('tama_current_slot', slot.toString())
+  
+  const demoData = createDemoData(slot)
+  
+  saveAll(
+    slot,
+    demoData.pet,
+    demoData.expenses || [],
+    demoData.income || [],
+    demoData.quests || null,
+    demoData.badges || [],
+    demoData.taskState || null,
+    true
+  )
 }
 
 /**

@@ -10,30 +10,10 @@ import { checkEvolution, acknowledgeEvolution } from '../core/pet'
 import { getPetEmoji, getAgeStage, AGE_LABELS } from '../game/data'
 
 /**
- * Dashboard Page Component (Game Hub)
- * 
- * Dashboard is the main hub where the user sees their pet and chooses what to do next.
- * Care & Activities is where the user performs essential care actions for free.
- * Store is where all spending happens and cost-of-care is tracked.
- * Reports show the running total of all care-related expenses.
- * This design teaches financial responsibility by separating care, spending, and analysis.
- * 
- * Game Design Features:
- * - Centered pet in a "play area" card with background
- * - HUD-style stat bars on the side (read-only overview)
- * - Big hub cards for navigation to major sections
- * - Mood-based background tints
- * - Smooth hover and click animations
- * 
- * FBLA Requirements:
- * - Intuitive game-like interface
- * - Clear visual feedback
- * - Accessible design
- * - Well-commented code
- * - Financial responsibility teaching through separation of care, spending, and analysis
+ * Dashboard Page Component
+ * Main hub for pet management and navigation
  */
 function Dashboard() {
-  // Get game core functions
   const { 
     pet, 
     isLoading, 
@@ -49,69 +29,36 @@ function Dashboard() {
     loadSlot,
     resetDemoMode,
     exitDemoMode,
-    evaluateAndAwardBadges // Badge evaluation after important events
+    evaluateAndAwardBadges
   } = useGameCore()
   
-  // Use stats directly if available, fallback to pet.stats for reactivity
   const displayStats = stats || pet?.stats
-  
-  // Get theme context
   const { theme, toggleTheme } = useTheme()
-  
-  // State for demo mode
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false)
-  
-  // State for pending age stage change event
   const [pendingEvolution, setPendingEvolution] = useState<{
     fromStage: number
     toStage: number
     atXp: number
     id: string
   } | null>(null)
-  
-  // State for trick unlock notification
   const [trickNotification, setTrickNotification] = useState<{ show: boolean, trickName?: string } | null>(null)
-  
-  // State for badge notification
   const [badgeNotification, setBadgeNotification] = useState<{ show: boolean, badgeId?: string } | null>(null)
-  
-  // State for warning toasts
   const [warnings, setWarnings] = useState<Array<{ id: string; message: string; type: string }>>([])
-  
-  // Track last warning time per stat to prevent spam
   const lastWarningTime = useRef<{ [key: string]: number }>({})
-  
-  // Navigation hook for redirecting if no pet exists
   const navigate = useNavigate()
 
-  /**
-   * Check for age stage change events when pet loads or changes.
-   * Only triggers when age stage actually changes (XP reaches thresholds: 20, 60, 120).
-   * 
-   * IMPORTANT: This effect only sets pendingEvolution if:
-   * 1. An age stage change event exists (ageStage changed)
-   * 2. The change hasn't been acknowledged (lastEvolutionAckId doesn't match)
-   * 3. There isn't already a pending change (to prevent re-triggering)
-   */
   useEffect(() => {
     if (!pet || !saveSlot) return
-    // Don't check if there's already a pending evolution (prevents re-triggering)
     if (pendingEvolution !== null) return
 
     try {
-      // Check for evolution using the new system (only triggers on actual stage change)
       const result = checkEvolution(pet)
       
-      // If evolution event exists and hasn't been acknowledged
       if (result.evolutionEvent) {
         const evolutionId = result.evolutionEvent.id
         
-        // Check if this evolution has already been acknowledged
         if (pet.lastEvolutionAckId !== evolutionId) {
-          // New evolution event - set as pending
           setPendingEvolution(result.evolutionEvent)
-          
-          // Update pet with new stage and save
           const slotData = GameCore.loadAll(saveSlot) || {
             pet: null,
             expenses: [],
@@ -159,7 +106,6 @@ function Dashboard() {
     }
   }, [saveSlot, pet])
   
-  // Render guard: Redirect to home if no current slot
   useEffect(() => {
     if (!isLoading && !saveSlot) {
       navigate('/')
@@ -196,7 +142,6 @@ function Dashboard() {
     const WARNING_COOLDOWN = 30000 // 30 seconds between warnings for same stat
     const newWarnings: Array<{ id: string; message: string; type: string }> = []
 
-    // Check hunger
     if (displayStats.hunger < 20) {
       const lastTime = lastWarningTime.current['hunger'] || 0
       if (now - lastTime > WARNING_COOLDOWN) {
@@ -209,7 +154,6 @@ function Dashboard() {
       }
     }
 
-    // Check health
     if (displayStats.health < 25) {
       const lastTime = lastWarningTime.current['health'] || 0
       if (now - lastTime > WARNING_COOLDOWN) {
@@ -222,7 +166,6 @@ function Dashboard() {
       }
     }
 
-    // Check cleanliness
     if (displayStats.cleanliness < 20) {
       const lastTime = lastWarningTime.current['cleanliness'] || 0
       if (now - lastTime > WARNING_COOLDOWN) {
@@ -235,7 +178,6 @@ function Dashboard() {
       }
     }
 
-    // Check energy
     if (displayStats.energy < 20) {
       const lastTime = lastWarningTime.current['energy'] || 0
       if (now - lastTime > WARNING_COOLDOWN) {
@@ -248,7 +190,6 @@ function Dashboard() {
       }
     }
 
-    // Add new warnings
     if (newWarnings.length > 0) {
       setWarnings(prev => [...prev, ...newWarnings])
     }
@@ -266,7 +207,6 @@ function Dashboard() {
     })
   }, [warnings])
   
-  // Render guard: Redirect to home if no current slot
   if (!isLoading && !saveSlot) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
@@ -280,7 +220,6 @@ function Dashboard() {
     )
   }
   
-  // Show loading state while pet is being loaded from database
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
@@ -297,7 +236,6 @@ function Dashboard() {
     )
   }
   
-  // Safety guard: If no pet or stats exist, show loading panel (no crash)
   if (!pet || !pet.stats) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: 'var(--bg)' }}>
@@ -472,6 +410,9 @@ function Dashboard() {
               </h1>
               <p className="text-xs sm:text-sm pixel-body" style={{ color: 'var(--text-muted)' }}>
                 View your pet and choose your next action
+              </p>
+              <p className="text-xs pixel-body mt-1" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                💡 Click the cards below to navigate to different sections
               </p>
             </div>
             
@@ -797,9 +738,14 @@ function Dashboard() {
             ZONE 3: MAIN MENU TILES (Big Buttons)
             ============================================================ */}
         <div className="mb-6">
-          <h2 className="text-xl pixel-heading mb-6 text-center" style={{ color: 'var(--text)' }}>
-            <span className="pixel-emoji mr-2">🎮</span> MAIN MENU
-          </h2>
+          <div className="text-center mb-4">
+            <h2 className="text-xl pixel-heading mb-2" style={{ color: 'var(--text)' }}>
+              <span className="pixel-emoji mr-2">🎮</span> NAVIGATION
+            </h2>
+            <p className="text-sm pixel-body" style={{ color: 'var(--text-muted)' }}>
+              Click any card below to go to that section
+            </p>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Tile 1: Care & Tasks */}
@@ -955,9 +901,12 @@ function Dashboard() {
                     if (saveSlot) {
                       // Reset demo mode (reseed same slot)
                       resetDemoMode(saveSlot)
-                      // Load slot to refresh UI state
-                      loadSlot(saveSlot)
-                      // updateStats will be called automatically by loadSlot
+                      // Force reload by clearing and reloading slot
+                      setTimeout(() => {
+                        loadSlot(saveSlot)
+                        // Force page refresh to ensure all state is reset
+                        window.location.reload()
+                      }, 100)
                     }
                   }}
                   className="retro-btn px-6 py-3 transition-all duration-200 hover:scale-105"

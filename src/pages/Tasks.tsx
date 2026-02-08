@@ -681,8 +681,11 @@ function Tasks() {
             </div>
             {pageTitle}
           </h1>
-          <p className="text-lg text-[#5A4632] pixel-body">
+          <p className="text-lg text-[#5A4632] pixel-body mb-2">
             Care for your pet and earn coins through activities!
+          </p>
+          <p className="text-sm text-[#6E5A47] pixel-body italic">
+            💡 Feed requires food from Store. Other care actions are free. Complete tasks and quests to earn coins.
           </p>
         </div>
         

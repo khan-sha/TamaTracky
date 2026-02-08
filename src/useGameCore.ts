@@ -1,29 +1,11 @@
 /**
- * useGameCore - ONE Hook for Everything
- * 
- * WHAT THIS IS:
- * This hook gives you access to ALL game functions and state.
- * 
- * HOW TO USE:
- * const { pet, feed, play, saveAll, shopItems } = useGameCore()
- * 
- * FOR JUDGES:
- * Instead of using many different hooks, you use ONE hook for everything.
+ * useGameCore Hook
+ * Provides access to all game state and functions
  */
-
 import { useState, useEffect, useCallback } from 'react'
 import { GameCore, PetData, GameState, SlotData } from './GameCore'
 import { getAgeStage } from './game/data'
 
-/**
- * useGameCore Hook
- * 
- * WHAT IT DOES:
- * - Loads pet from current save slot
- * - Provides all game functions
- * - Auto-saves when pet changes
- */
-// Helper to ensure stats are numbers (never strings)
 function ensureStatsAreNumbers(stats: any) {
   return {
     health: typeof stats?.health === 'number' ? stats.health : Number(stats?.health) || 100,
@@ -35,12 +17,10 @@ function ensureStatsAreNumbers(stats: any) {
 }
 
 export function useGameCore() {
-  // Current pet state
   const [pet, setPetState] = useState<PetData | null>(null)
   const [saveSlot, setSaveSlotState] = useState<1 | 2 | 3 | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  // Load current slot from localStorage and apply decay
   useEffect(() => {
     try {
       const savedSlot = localStorage.getItem('tama_current_slot')
@@ -49,7 +29,6 @@ export function useGameCore() {
         setSaveSlotState(slot)
         const data = GameCore.loadAll(slot)
         if (data && data.pet) {
-          // Ensure pet has all required fields and stats are numbers
           let pet: PetData = {
             ...data.pet,
             tricks: data.pet.tricks || [],
@@ -58,14 +37,11 @@ export function useGameCore() {
             stats: ensureStatsAreNumbers(data.pet.stats),
             lastTickAt: data.pet.lastTickAt || data.pet.lastUpdated || data.pet.createdAt
           }
-          // Apply decay on load (use normal mode multiplier - meta.demo not yet loaded)
-          // The global interval will handle mode-specific decay after load
           pet = GameCore.applyTimeDecay(pet, Date.now(), 1.0)
           setPetState(pet)
           GameCore.state.pet = pet
           GameCore.state.saveSlot = slot
           GameCore.state.mood = GameCore.getMood(pet)
-          // Save after applying decay
           GameCore.saveAll(slot, pet, data.expenses || [], data.income || [], data.quests || [], pet.badges || [], data.taskState || null, data.meta?.demo)
         }
       }
@@ -76,8 +52,6 @@ export function useGameCore() {
     }
   }, [])
   
-  // SINGLE GLOBAL INTERVAL - Applies decay every 10 seconds
-  // This is the ONLY interval that should run decay across the entire app
   useEffect(() => {
     if (!saveSlot) return
     
@@ -85,28 +59,19 @@ export function useGameCore() {
     
     const tick = () => {
       try {
-        // Always load fresh from slot to get latest state (prevents stale state issues)
         const slotData = GameCore.loadAll(saveSlot)
         if (!slotData || !slotData.pet) return
         
         const currentPet = slotData.pet
-        
-        // Determine decay multiplier based on mode
-        // Normal mode: 1.0 (uses current demo speed as base)
-        // Demo mode: 2.0 (faster for quick demonstrations)
         const decayMult = slotData.meta?.demo === true ? 2.0 : 1.0
-        
-        // Apply decay with multiplier
         const now = Date.now()
         const updatedPet = GameCore.applyTimeDecay(currentPet, now, decayMult)
         
-        // Check if pet actually changed (avoid unnecessary saves)
         if (updatedPet.lastTickAt !== currentPet.lastTickAt ||
             updatedPet.stats.hunger !== currentPet.stats.hunger ||
             updatedPet.stats.energy !== currentPet.stats.energy ||
             updatedPet.stats.health !== currentPet.stats.health) {
           
-          // Save to current slot
           GameCore.saveAll(
             saveSlot,
             updatedPet,
@@ -118,7 +83,6 @@ export function useGameCore() {
             slotData.meta?.demo
           )
           
-          // Update in-memory state (force new object reference to ensure React detects change)
           setPetState({ ...updatedPet, stats: { ...updatedPet.stats } })
           GameCore.state.pet = updatedPet
           GameCore.state.mood = GameCore.getMood(updatedPet)
@@ -128,26 +92,20 @@ export function useGameCore() {
       }
     }
     
-    // Run tick immediately on mount
     tick()
-    
-    // Set up interval (every 10 seconds)
     intervalId = setInterval(tick, 10000)
     
-    // Cleanup on unmount or when saveSlot changes
     return () => {
       if (intervalId) {
         clearInterval(intervalId)
       }
     }
-  }, [saveSlot]) // Only depend on saveSlot, not pet (to avoid recreating interval)
+  }, [saveSlot])
   
-  // Apply decay when app becomes visible (tab returns from background)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && saveSlot && pet) {
         try {
-          // Load slot data to get meta.demo for decay multiplier
           const slotData = GameCore.loadAll(saveSlot) || {
             pet: null,
             expenses: [],
@@ -157,9 +115,7 @@ export function useGameCore() {
             meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot }
           }
           
-          // Determine decay multiplier based on mode
           const decayMult = slotData.meta?.demo === true ? 2.0 : 1.0
-          
           const updatedPet = GameCore.applyTimeDecay(pet, Date.now(), decayMult)
           if (updatedPet.lastTickAt !== pet.lastTickAt) {
             GameCore.saveAll(
@@ -186,22 +142,18 @@ export function useGameCore() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [saveSlot, pet])
   
-  // Update pet and auto-save
   const setPet = useCallback((newPet: PetData | null) => {
     setPetState(newPet)
     if (newPet) {
       GameCore.state.pet = newPet
-      // This updates the pet's mood based on their stats
       GameCore.state.mood = GameCore.getMood(newPet)
       if (saveSlot) {
         const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
-        // This saves everything inside the chosen slot
         GameCore.saveAll(saveSlot, newPet, data.expenses || [], data.income || [], data.quests || [], newPet.badges || [])
       }
     }
   }, [saveSlot])
   
-  // Load a slot
   const loadSlot = useCallback((slot: 1 | 2 | 3) => {
     try {
       setSaveSlotState(slot)
@@ -249,28 +201,9 @@ export function useGameCore() {
     }
   }, [saveSlot])
   
-  // ============================================================================
-  // BADGE EVALUATION (Must be defined before actions that use it)
-  // ============================================================================
-  
-  /**
-   * Evaluates and awards badges after important events
-   * 
-   * FBLA RUBRIC ALIGNMENT:
-   * - Functions: evaluateAndAwardBadges() centralizes badge logic
-   * - Conditionals: Checks if badges should be awarded
-   * - Validation: Idempotent - never re-adds same badge
-   * 
-   * This function:
-   * 1. Creates evaluation state from current pet and slot data
-   * 2. Evaluates all badge criteria
-   * 3. Awards new badges to pet
-   * 4. Saves updated pet with badges
-   */
   const evaluateAndAwardBadges = useCallback(() => {
     if (!pet || !saveSlot) return
     
-    // Load slot data for complete evaluation state
     const data = GameCore.loadAll(saveSlot) || {
       pet: null,
       expenses: [],
@@ -280,16 +213,11 @@ export function useGameCore() {
       meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot }
     }
     
-    // Calculate totals for badge evaluation
-    // FUNCTIONS: getTotalCareCost and getCareCostByCategory calculate financial totals
     const totalCareCost = pet ? GameCore.getTotalCareCost(pet) : 0
     const careCostByCategory = pet ? GameCore.getCareCostByCategory(pet) : {}
-    
-    // Count completed quests (quests with completedAt timestamp)
     const quests = GameCore.getQuests(data)
     const completedQuestsCount = quests.daily.filter(q => q.completedAt !== undefined).length
     
-    // Create evaluation state
     const evaluationState = {
       pet,
       slotData: data,
@@ -299,15 +227,11 @@ export function useGameCore() {
       currentAgeStage: pet.ageStage ?? (pet.xp !== undefined ? getAgeStage(pet.xp) : 0)
     }
     
-    // Evaluate badges
     const newBadgeIds = GameCore.evaluateBadges(evaluationState)
     
-    // Award new badges if any
     if (newBadgeIds.length > 0) {
       const petWithBadges = GameCore.awardBadges(pet, newBadgeIds)
       setPet(petWithBadges)
-      
-      // Save updated pet with badges
       GameCore.saveAll(
         saveSlot,
         petWithBadges,
@@ -321,26 +245,16 @@ export function useGameCore() {
     return newBadgeIds
   }, [pet, saveSlot, setPet])
   
-  // ============================================================================
-  // PET ACTIONS (all auto-save and update quest progress)
-  // ============================================================================
-  
-  // Feed now requires food items from inventory (not coins)
-  // This teaches financial responsibility by requiring users to plan spending
   const feed = useCallback((foodItemId: number = 1) => {
     if (!pet || !saveSlot) return false
     const result = GameCore.feed(pet, foodItemId)
     if (result.success) {
       setPet(result.pet)
-      // Every pet action must call updateQuestProgress(actionName)
       const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
       const quests = GameCore.getQuests(data)
       const updatedQuests = GameCore.updateQuestProgress(quests, 'feed')
       GameCore.saveAll(saveSlot, result.pet, data.expenses || [], data.income || [], updatedQuests, result.pet.badges || [])
-      
-      // Evaluate badges after care action (important event)
       setTimeout(() => evaluateAndAwardBadges(), 100)
-      
       return true
     }
     return false
@@ -351,7 +265,6 @@ export function useGameCore() {
     const result = GameCore.play(pet, cost)
     if (result.success) {
       setPet(result.pet)
-      // Every pet action must call updateQuestProgress(actionName)
       const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
       const quests = GameCore.getQuests(data)
       const updatedQuests = GameCore.updateQuestProgress(quests, 'play')
@@ -371,14 +284,11 @@ export function useGameCore() {
     return false
   }, [pet, setPet])
   
-  // Health check (paid service) - requires coins
-  // This teaches financial responsibility by requiring users to budget for health care
   const visitVet = useCallback((cost: number, healthRestore: number = 15, happinessBonus: number = 0) => {
     if (!pet || !saveSlot) return { success: false, pet: null, message: 'No pet found' }
     const result = GameCore.visitVet(pet, cost, healthRestore, happinessBonus)
     if (result.success) {
       setPet(result.pet)
-      // Every pet action must call updateQuestProgress(actionName)
       const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
       const quests = GameCore.getQuests(data)
       const updatedQuests = GameCore.updateQuestProgress(quests, 'visitVet')
@@ -392,7 +302,6 @@ export function useGameCore() {
     const result = GameCore.clean(pet, cost)
     if (result.success) {
       setPet(result.pet)
-      // Every pet action must call updateQuestProgress(actionName)
       const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
       const quests = GameCore.getQuests(data)
       const updatedQuests = GameCore.updateQuestProgress(quests, 'clean')
@@ -402,14 +311,12 @@ export function useGameCore() {
     return false
   }, [pet, setPet, saveSlot])
   
-  // XP and evolution
   const giveXP = useCallback((amount: number) => {
     if (!pet) return
     const newPet = GameCore.giveXP(pet, amount)
     setPet(newPet)
   }, [pet, setPet])
   
-  // Money
   const addCoins = useCallback((amount: number) => {
     if (!pet) return
     const newPet = GameCore.addCoins(pet, amount)
@@ -422,31 +329,25 @@ export function useGameCore() {
     setPet(newPet)
   }, [pet, setPet])
   
-  // Shop
   const buyItem = useCallback((item: any) => {
     if (!pet) return { success: false, message: 'No pet found', pet: null }
     const result = GameCore.buyItem(pet, item)
     if (result.success) {
       setPet(result.pet)
-      // Save after purchase
       if (saveSlot) {
         const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
         GameCore.saveAll(saveSlot, result.pet, data.expenses || [], data.income || [])
-        
-        // Evaluate badges after purchase (important event)
         setTimeout(() => evaluateAndAwardBadges(), 100)
       }
     }
     return result
   }, [pet, setPet, saveSlot, evaluateAndAwardBadges])
   
-  // Rewards (for mini-games)
   const applyReward = useCallback((reward: any) => {
     if (!pet) return { success: false, pet: null, incomeRecord: null }
     const result = GameCore.applyReward(pet, reward)
     if (result.success) {
       setPet(result.pet)
-      // Save income record to slot
       if (saveSlot && result.incomeRecord) {
         const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
         const updatedIncome = [...(data.income || []), result.incomeRecord]
@@ -456,23 +357,18 @@ export function useGameCore() {
     return result
   }, [pet, setPet, saveSlot])
   
-  // Save/Load
   const saveAll = useCallback((quests?: any, badges?: string[]) => {
     if (!saveSlot || !pet) return
     const data = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
-    // This saves everything inside the chosen slot
     GameCore.saveAll(saveSlot, pet, data.expenses || [], data.income || [], quests || data.quests || [], badges || pet.badges || [])
   }, [saveSlot, pet])
   
-  // Stats decay (legacy function - uses normal mode multiplier)
   const updateStats = useCallback(() => {
     if (!pet) return
-    // Use normal mode multiplier (1.0) - the global interval handles mode-specific decay
     const newPet = GameCore.applyTimeDecay(pet, Date.now(), 1.0)
     setPet(newPet)
   }, [pet, setPet])
   
-  // Legacy badge functions for backward compatibility
   const checkBadges = useCallback(() => {
     if (!pet) return []
     return GameCore.checkBadges(pet)
@@ -485,19 +381,16 @@ export function useGameCore() {
     return newPet
   }, [pet, setPet])
   
-  // Create pet
   const createPet = useCallback((name: string, petType: "cat" | "dog" | "rabbit", coins: number = 1000) => {
     const newPet = GameCore.createPet(name, petType, coins)
     setPet(newPet)
     return newPet
   }, [setPet])
   
-  // Get all slots
   const getAllSlots = useCallback(() => {
     return GameCore.getAllSlots()
   }, [])
   
-  // Return everything
   return {
     // State
     pet,

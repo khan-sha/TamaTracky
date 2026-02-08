@@ -301,8 +301,11 @@ function Guide() {
             <h1 className="text-2xl sm:text-3xl font-bold pixel-heading mb-2" style={{ color: 'var(--text)' }}>
               📋 CARE GUIDE
             </h1>
-            <p className="text-sm pixel-body" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-sm pixel-body mb-2" style={{ color: 'var(--text-muted)' }}>
               Daily checklist to help you care for your pet responsibly
+            </p>
+            <p className="text-xs pixel-body italic" style={{ color: 'var(--text-muted)' }}>
+              💡 Check off items as you complete them. Get smart suggestions based on your pet's needs.
             </p>
           </div>
         </div>

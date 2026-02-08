@@ -1,351 +1,45 @@
-import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useGameCore } from '../useGameCore'
 import ExpenseTable from '../components/ExpenseTable'
 import ExpenseChart from '../components/ExpenseChart'
-import { GameCore } from '../GameCore'
+import { useReportsData } from '../reports/useReportsData'
 import {
-  normalizeFinanceData,
-  buildReportModel,
-  filterExpensesByDate,
-  filterIncomeByDate,
-  exportExpensesCSV as exportExpensesCSVUtil,
-  exportIncomeCSV as exportIncomeCSVUtil,
-  type DateRange
-} from '../utils/reporting'
-import { sanitizeTransactions } from '../utils/sanitizeTransactions'
+  formatRelativeTime,
+  handleExportExpenses,
+  handleExportIncome,
+  handleExportStats
+} from '../reports/reportUtils'
+import type { DateRange } from '../utils/reporting'
 
 /**
  * Reports Page Component
- * 
- * PURPOSE: Comprehensive financial reporting and analytics for pet care expenses.
- * Demonstrates cost-of-care education through expense tracking and visualization.
- * 
- * KEY FEATURES:
- * - Expense and income tracking with category breakdown
- * - Date range filtering (Today, Last 7/30 days, All time)
- * - Chart visualizations (Line, Bar, Doughnut)
- * - CSV export for data analysis
- * - Judge Mode: One-click comprehensive summary
- * 
- * ORGANIZATION: Uses single source of truth from normalized transaction data.
- * All calculations (totals, charts, filters) derive from the same data set.
- * This ensures accuracy and prevents discrepancies between displays.
+ * Financial reporting and analytics for pet care expenses
  */
 function Reports() {
-  // Get game core data
-  const { pet, isLoading, saveSlot } = useGameCore()
+  const {
+    pet,
+    isLoading,
+    reportModel,
+    filteredExpenses,
+    filteredIncome,
+    insights,
+    demoInsights,
+    top3Categories,
+    isDemoMode,
+    categoryFilter,
+    setCategoryFilter,
+    dateFilter,
+    setDateFilter,
+    chartType,
+    setChartType,
+    budgetLimit,
+    setBudgetLimit
+  } = useReportsData()
   
-  // Filter state
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const [dateFilter, setDateFilter] = useState<DateRange>('all')
-  const [chartType, setChartType] = useState<'line' | 'bar' | 'doughnut'>('bar')
-  
-  // Budget state
-  const [budgetLimit, setBudgetLimit] = useState<number>(100)
-  
-  // Dev test state (remove after verification)
-  const [showTestButton, setShowTestButton] = useState<boolean>(false)
-  
-  /**
-   * Loads and normalizes slot data
-   */
-  const normalizedData = useMemo(() => {
-    if (!pet || !saveSlot) return { expenses: [], income: [] }
-    try {
-      const slotData = GameCore.loadAll(saveSlot)
-      const normalized = normalizeFinanceData(slotData)
-      
-      // Sanitize to remove duplicates and fix invalid data (safety net)
-      const sanitized = sanitizeTransactions(normalized.expenses, normalized.income)
-      
-      return sanitized
-    } catch (error) {
-      console.error('Error loading slot data:', error)
-      return { expenses: [], income: [] }
-    }
-  }, [pet, saveSlot])
-  
-  /**
-   * Check if demo mode is active
-   */
-  const isDemoMode = useMemo(() => {
-    if (!saveSlot) return false
-    try {
-      const slotData = GameCore.loadAll(saveSlot)
-      return slotData?.meta?.demo === true
-    } catch {
-      return false
-    }
-  }, [saveSlot])
-  
-  /**
-   * Initialize date filter for demo mode
-   */
-  useEffect(() => {
-    if (isDemoMode && dateFilter === 'all') {
-      setDateFilter('last30days')
-    }
-  }, [isDemoMode, dateFilter])
-  
-  /**
-   * Builds the report model from normalized data
-   */
-  const reportModel = useMemo(() => {
-    return buildReportModel(normalizedData.expenses, normalizedData.income, dateFilter)
-  }, [normalizedData.expenses, normalizedData.income, dateFilter])
-  
-  /**
-   * Filters expenses by category (after date filtering)
-   */
-  const filteredExpenses = useMemo(() => {
-    let expenses = filterExpensesByDate(normalizedData.expenses, dateFilter)
-    
-    // Apply category filter
-    if (categoryFilter !== 'all') {
-      const categoryMap: Record<string, string[]> = {
-        'food': ['Food'],
-        'healthcare': ['Health'],
-        'toys': ['Toys'],
-        'supplies': ['Supplies'],
-        'activities': ['Activities'],
-        'other': ['Other']
-      }
-      
-      const allowedCategories = categoryMap[categoryFilter] || []
-      if (allowedCategories.length > 0) {
-        expenses = expenses.filter(exp => allowedCategories.includes(exp.category))
-      }
-    }
-    
-    return expenses
-  }, [normalizedData.expenses, dateFilter, categoryFilter])
-  
-  /**
-   * Filters income by date (already done in reportModel, but kept for compatibility)
-   */
-  const filteredIncome = useMemo(() => {
-    return filterIncomeByDate(normalizedData.income, dateFilter)
-  }, [normalizedData.income, dateFilter])
-  
-  /**
-   * Formats a timestamp into a relative time string (e.g., "2 hours ago", "just now")
-   */
-  const formatRelativeTime = (timestamp: number): string => {
-    const now = Date.now()
-    const diff = now - timestamp
-    const seconds = Math.floor(diff / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-    
-    if (days > 0) {
-      return `${days} day${days > 1 ? 's' : ''} ago`
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`
-    } else if (minutes > 0) {
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
-    } else {
-      return 'just now'
-    }
-  }
-  
-  /**
-   * Gets the last updated timestamp for display
-   */
   const lastUpdatedTimestamp = pet?.lastUpdated || Date.now()
   
-  /**
-   * Handles CSV export of expenses
-   */
-  const handleExportExpenses = () => {
-    if (filteredExpenses.length === 0) {
-      alert('No expenses to export.')
-      return
-    }
-    
-    const csv = exportExpensesCSVUtil(filteredExpenses)
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `tama-tracky-expenses-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-  
-  /**
-   * Handles CSV export of income
-   */
-  const handleExportIncome = () => {
-    if (filteredIncome.length === 0) {
-      alert('No income to export.')
-      return
-    }
-    
-    const csv = exportIncomeCSVUtil(filteredIncome)
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `tama-tracky-income-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-  
-  /**
-   * Handles CSV export of statistics
-   */
-  const handleExportStats = () => {
-    if (!pet) {
-      alert('No pet data to export.')
-      return
-    }
-    
-    const filename = `tama-tracky-stats-${new Date().toISOString().split('T')[0]}.csv`
-    const ageStage = pet.ageStage ?? (pet.xp >= 120 ? 3 : pet.xp >= 60 ? 2 : pet.xp >= 20 ? 1 : 0)
-    const ageLabels: Record<number, string> = { 0: 'Baby', 1: 'Young', 2: 'Adult', 3: 'Mature' }
-    const csv = `Name,Pet Type,Age Stage,XP,Health,Happiness,Hunger,Cleanliness,Energy,Coins,Total Expenses,Total Income,Net\n${pet.name},${pet.petType || 'cat'},${ageLabels[ageStage] || 'Baby'},${pet.xp},${pet.stats.health},${pet.stats.happiness},${pet.stats.hunger},${pet.stats.cleanliness},${pet.stats.energy},${pet.coins},${reportModel.totalSpent},${reportModel.totalEarned},${reportModel.net}`
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-  
-  /**
-   * DEV TEST: Adds known test data to verify report accuracy
-   * REMOVE AFTER VERIFICATION
-   */
-  const handleTestData = () => {
-    if (!pet || !saveSlot) {
-      alert('No pet or slot loaded')
-      return
-    }
-    
-    try {
-      const slotData = GameCore.loadAll(saveSlot) || { pet: null, expenses: [], income: [], quests: [], badges: [], meta: { createdAt: '', lastPlayed: '', slotNumber: saveSlot } }
-      
-      // Add test expenses: 10 Food, 20 Toys, 30 Health => Total = 60
-      const testExpenses = [
-        { id: `test_exp_${Date.now()}_1`, timestamp: Date.now(), amount: 10, category: 'Food' as const, label: 'Test Food Expense' },
-        { id: `test_exp_${Date.now()}_2`, timestamp: Date.now() + 1000, amount: 20, category: 'Toys' as const, label: 'Test Toy Expense' },
-        { id: `test_exp_${Date.now()}_3`, timestamp: Date.now() + 2000, amount: 30, category: 'Health' as const, label: 'Test Health Expense' }
-      ]
-      
-      // Add test income: 5 Task, 15 Quest => Total = 20
-      const testIncome = [
-        { id: `test_inc_${Date.now()}_1`, timestamp: Date.now() + 3000, amount: 5, source: 'Task' as const, label: 'Test Task Income' },
-        { id: `test_inc_${Date.now()}_2`, timestamp: Date.now() + 4000, amount: 15, source: 'Quest' as const, label: 'Test Quest Income' }
-      ]
-      
-      // Merge with existing data
-      const updatedExpenses = [...(slotData.expenses || []), ...testExpenses.map(exp => ({
-        id: exp.id,
-        timestamp: exp.timestamp,
-        amount: exp.amount,
-        description: exp.label,
-        type: exp.category.toLowerCase() as any
-      }))]
-      
-      const updatedIncome = [...(slotData.income || []), ...testIncome.map(inc => ({
-        id: inc.id,
-        timestamp: inc.timestamp,
-        amount: inc.amount,
-        description: inc.label,
-        source: inc.source
-      }))]
-      
-      // Save to slot
-      GameCore.saveAll(saveSlot, pet, updatedExpenses, updatedIncome, slotData.quests || [], pet.badges || [])
-      
-      alert(`Test data added!\nExpected: Spent 60, Earned 20, Net -40\nPlease refresh the page to see results.`)
-      window.location.reload()
-    } catch (error) {
-      console.error('Test data error:', error)
-      alert('Failed to add test data: ' + (error instanceof Error ? error.message : 'Unknown error'))
-    }
-  }
-  
-  /**
-   * Generates insights based on spending patterns
-   */
-  const insights = useMemo(() => {
-    const insightsList: string[] = []
-    
-    if (reportModel.totalSpent === 0) {
-      insightsList.push("You haven't spent any coins yet. Start caring for your pet!")
-      return insightsList
-    }
-    
-    // Find top spending category
-    const topCategory = Object.entries(reportModel.spentByCategory).reduce((a, b) => 
-      b[1] > a[1] ? b : a, ['', 0] as [string, number]
-    )
-    
-    if (topCategory[1] > 0) {
-      insightsList.push(`Most of your spending is on ${topCategory[0]} (${Math.round(topCategory[1])} coins).`)
-    }
-    
-    // Health vs Toys comparison
-    const healthSpending = reportModel.spentByCategory['Health'] || 0
-    const toySpending = reportModel.spentByCategory['Toys'] || 0
-    if (healthSpending > 0 || toySpending > 0) {
-      insightsList.push(`You've spent ${Math.round(healthSpending)} coins on Health and ${Math.round(toySpending)} coins on Toys.`)
-    }
-    
-    // Savings suggestion
-    const activitySpending = reportModel.spentByCategory['Activities'] || 0
-    if (activitySpending > 50) {
-      const savings = Math.floor(activitySpending * 0.2)
-      insightsList.push(`If you reduce activity spending by 20%, you'd save about ${savings} coins.`)
-    }
-    
-    // Budget status
-    if (reportModel.totalSpent > budgetLimit) {
-      insightsList.push(`⚠️ You've exceeded your budget of ${budgetLimit} coins by ${Math.round(reportModel.totalSpent - budgetLimit)} coins.`)
-    } else {
-      const remaining = budgetLimit - reportModel.totalSpent
-      insightsList.push(`✅ You have ${Math.round(remaining)} coins remaining in your budget of ${budgetLimit} coins.`)
-    }
-    
-    return insightsList
-  }, [reportModel, budgetLimit])
-  
-  /**
-   * Demo mode insights (educational highlights)
-   */
-  const demoInsights = useMemo(() => {
-    if (!isDemoMode) return null
-    
-    const topCategory = Object.entries(reportModel.spentByCategory).reduce((a, b) => 
-      b[1] > a[1] ? b : a, ['', 0] as [string, number]
-    )
-    
-    // Find most expensive single event
-    const mostExpensive = reportModel.recentTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((a, b) => b.amount > a.amount ? b : a, { type: 'expense' as const, id: '', label: '', amount: 0, timestamp: 0 })
-    
-    return {
-      topCategory: topCategory[0] || 'Food',
-      topCategoryAmount: Math.round(topCategory[1] || 0),
-      mostExpensiveEvent: mostExpensive.label || 'Vet Visit',
-      mostExpensiveAmount: mostExpensive.amount || 0
-    }
-  }, [isDemoMode, reportModel])
-  
-  /**
-   * Top 3 spending categories for demo breakdown
-   */
-  const top3Categories = useMemo(() => {
-    return Object.entries(reportModel.spentByCategory)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([category, amount]) => ({ category, amount: Math.round(amount) }))
-  }, [reportModel.spentByCategory])
+  const onExportExpenses = () => handleExportExpenses(filteredExpenses)
+  const onExportIncome = () => handleExportIncome(filteredIncome)
+  const onExportStats = () => handleExportStats(pet, reportModel)
   
   // Show loading state
   if (isLoading) {
@@ -396,7 +90,6 @@ function Reports() {
   return (
     <div className="min-h-screen bg-[#F2E9D8]">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Back to Dashboard Button */}
         <div className="mb-4">
           <Link
             to="/dashboard"
@@ -415,30 +108,16 @@ function Reports() {
             <p className="text-[#6E5A47] text-base pixel-body mb-1">
               View your pet care history and performance metrics
             </p>
-            <p className="text-xs text-[#6E5A47] pixel-body opacity-75">
+            <p className="text-xs text-[#6E5A47] pixel-body opacity-75 mb-2">
               Last updated: {formatRelativeTime(lastUpdatedTimestamp)}
             </p>
-          </div>
-          {/* DEV TEST BUTTON - REMOVE AFTER VERIFICATION */}
-          <div className="absolute top-0 right-0">
-            <button
-              onClick={() => setShowTestButton(!showTestButton)}
-              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-            >
-              {showTestButton ? 'Hide' : 'Show'} Test
-            </button>
-            {showTestButton && (
-              <button
-                onClick={handleTestData}
-                className="ml-2 px-3 py-1 text-xs bg-yellow-500 hover:bg-yellow-600 text-white rounded"
-              >
-                Add Test Data
-              </button>
-            )}
+            <p className="text-sm text-[#6E5A47] pixel-body italic">
+              💡 Use filters above to view specific time periods or categories. Export data to CSV for analysis.
+            </p>
           </div>
         </div>
         
-        {/* Summary Cards - Clean Aligned Row */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Total Spent */}
           <div className="retro-panel p-5 bg-[#FAEEDC] text-[#5A4632] border-4 border-[#6E5A47]" style={{ boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
@@ -910,21 +589,21 @@ function Reports() {
             <div className="flex flex-col gap-2">
               <label className="block text-sm font-medium text-[#6E5A47] mb-2 pixel-body">Export</label>
               <button
-                onClick={handleExportExpenses}
+                onClick={onExportExpenses}
                 className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white retro-btn text-sm"
                 title="Export all expense transactions to CSV file for analysis"
               >
                 Export Expenses CSV
               </button>
               <button
-                onClick={handleExportIncome}
+                onClick={onExportIncome}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white retro-btn text-sm"
                 title="Export all income transactions to CSV file for analysis"
               >
                 Export Income CSV
               </button>
               <button
-                onClick={handleExportStats}
+                onClick={onExportStats}
                 className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white retro-btn text-sm"
                 title="Export pet statistics and financial summary to CSV file"
               >

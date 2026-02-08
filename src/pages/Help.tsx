@@ -267,7 +267,6 @@ function Help() {
   return (
     <div className="min-h-screen bg-[#F2E9D8] pixel-body">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Back to Dashboard Button */}
         <div className="mb-4">
           <Link
             to="/dashboard"
@@ -277,13 +276,15 @@ function Help() {
           </Link>
         </div>
         
-        {/* Retro Pixel Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl sm:text-3xl mb-3 text-[#6E5A47] pixel-heading">
             HELP & SUPPORT
           </h1>
-          <p className="text-xl text-[#6E5A47] pixel-body">
+          <p className="text-xl text-[#6E5A47] pixel-body mb-2">
             Get help with Tama Tracky and learn how to care for your virtual pet
+          </p>
+          <p className="text-sm text-[#6E5A47] pixel-body italic">
+            💡 Ask questions in the chat below or click suggested questions. Browse FAQ cards for quick answers.
           </p>
         </div>
         

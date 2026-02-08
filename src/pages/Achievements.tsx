@@ -118,12 +118,14 @@ function Achievements() {
           </Link>
         </div>
         
-        {/* Header - Retro Pixel Style */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-[#5A4632] mb-2 pixel-heading">
             <span className="pixel-emoji">🏆</span> ACHIEVEMENTS
           </h1>
-          <p className="text-[#6E5A47] text-lg pixel-body">Track your progress and unlock badges!</p>
+          <p className="text-[#6E5A47] text-lg pixel-body mb-2">Track your progress and unlock badges!</p>
+          <p className="text-sm text-[#6E5A47] pixel-body italic">
+            💡 Filter badges by clicking [All], [Earned], or [Locked] buttons below
+          </p>
         </div>
         
         {/* Progress Summary - Retro Panel */}

@@ -214,10 +214,18 @@ function PetHUD() {
               </>
             ) : (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E5A47] mx-auto mb-4"></div>
-                <p className="pixel-body text-sm" style={{ color: 'var(--text-muted)' }}>
-                  {isLoading ? 'Loading...' : 'No pet loaded'}
-                </p>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E5A47] mx-auto mb-4"></div>
+                    <p className="pixel-body text-sm" style={{ color: 'var(--text-muted)' }}>
+                      Loading...
+                    </p>
+                  </>
+                ) : (
+                  <p className="pixel-body text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Create a pet to get started
+                  </p>
+                )}
               </div>
             )}
           </div>

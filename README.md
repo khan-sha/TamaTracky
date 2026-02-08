@@ -126,8 +126,15 @@ Tama Tracky follows a **clean, modular architecture**:
 - **[QUICK_START.md](./QUICK_START.md)**: How to run + demo in 3-5 minutes
 - **[docs/architecture.md](./docs/architecture.md)**: System architecture and technical details
 - **[docs/design_notes.md](./docs/design_notes.md)**: Design decisions and rationale
-- **[docs/attributions.md](./docs/attributions.md)**: Third-party library credits
-- **[TamaTracky-IntroToProgrammingFBLA25-26.pdf](./TamaTracky-IntroToProgrammingFBLA25-26.pdf)**: Third-party library credits
+- **[docs/attributions.md](./docs/attributions.md)**: Third-party library credits and AI attribution
+- **[TamaTracky-IntroToProgrammingFBLA25-26.pdf](./TamaTracky-IntroToProgrammingFBLA25-26.pdf)**: Main project documentation
 
+## Attributions
+
+A complete list of external resources, libraries, and AI tools used during development is available in:
+
+📄 [docs/attributions.md](./docs/attributions.md)
+
+---
 
 This project is created for FBLA Introduction to Programming competition.

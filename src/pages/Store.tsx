@@ -1,17 +1,6 @@
 /**
  * Store Page Component
- * 
- * This component displays a virtual store organized into categories:
- * A) Food & Supplies
- * B) Health & Vet
- * C) Toys & Activity Passes
- * 
- * FBLA Requirements:
- * - Clear item display with categories
- * - Obvious pricing
- * - Visual feedback for affordability
- * - Purchase logic logs expenses properly
- * - This helps teach the cost of caring for a pet
+ * Displays virtual store with categorized items (Food, Health, Toys)
  */
 
 import { Link, useNavigate } from 'react-router-dom'
@@ -22,19 +11,12 @@ function Store() {
   const { pet, isLoading, coins, buyItem, shopItems, saveSlot } = useGameCore()
   const navigate = useNavigate()
   
-  // Render guard: Redirect to home if no current slot
   useEffect(() => {
     if (!isLoading && !saveSlot) {
       navigate('/')
     }
   }, [isLoading, saveSlot, navigate])
   
-  /**
-   * Handles the purchase of an item.
-   * 
-   * This logs money spent when the user buys food, toys, or activities.
-   * Purchase logic: Check coins, subtract coins, add to inventory, logExpense, update reports.
-   */
   const handlePurchase = (itemId: number) => {
     if (!pet) {
       alert('No pet found. Please create a pet first.')
@@ -44,7 +26,6 @@ function Store() {
     const item = shopItems.find(p => p.id === itemId)
     if (!item) return
     
-    // Try to buy the item (buyItem handles all logic)
     const result = buyItem(item)
     
     if (result.success) {
@@ -54,16 +35,12 @@ function Store() {
     }
   }
   
-  /**
-   * Groups shop items by category
-   */
   const itemsByCategory = {
     food: shopItems.filter(item => item.category === 'food' || item.category === 'supplies'),
     health: shopItems.filter(item => item.category === 'health'),
     toys: shopItems.filter(item => item.category === 'toys' || item.category === 'activity')
   }
   
-  // Render guard: Show loading if no slot
   if (!isLoading && !saveSlot) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
@@ -77,7 +54,6 @@ function Store() {
     )
   }
   
-  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAEEDC]">
@@ -89,7 +65,6 @@ function Store() {
     )
   }
   
-  // Safety guard: If no pet or stats exist, show loading panel (no crash)
   if (!pet || !pet.stats) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: 'var(--bg)' }}>
@@ -106,7 +81,6 @@ function Store() {
     )
   }
   
-  // If no pet exists, show message
   if (!pet) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAEEDC] p-8">
@@ -128,7 +102,6 @@ function Store() {
   return (
     <div className="min-h-screen bg-[#FAEEDC] pixel-body">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8" style={{ marginTop: '32px' }}>
-        {/* Back to Dashboard Button */}
         <div className="mb-4">
           <button
             onClick={() => navigate('/dashboard')}
@@ -143,8 +116,11 @@ function Store() {
           <h1 className="text-5xl sm:text-6xl font-black text-[#5A4632] mb-2 pixel-heading">
             🛒 PET STORE
           </h1>
-          <p className="text-xl text-[#5A4632] font-bold pixel-body">
+          <p className="text-xl text-[#5A4632] font-bold pixel-body mb-2">
             Purchase items to care for and customize your pet
+          </p>
+          <p className="text-sm text-[#6E5A47] pixel-body italic">
+            💡 All purchases are tracked in Reports. Food goes to inventory - use it in Tasks page to feed your pet.
           </p>
         </div>
         
@@ -157,8 +133,8 @@ function Store() {
                 <p className="text-sm font-black text-yellow-900 uppercase tracking-wide pixel-font">
                   Your Coins
                 </p>
-                <p className="text-5xl font-black text-yellow-900 pixel-font">
-                  {coins.toLocaleString()}
+                <p className="text-5xl font-black text-yellow-900" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 900 }}>
+                  {(pet?.coins ?? coins).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -182,7 +158,8 @@ function Store() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {itemsByCategory.food.map((product) => {
-              const canAfford = coins >= product.price
+              const currentCoins = pet?.coins ?? coins
+              const canAfford = currentCoins >= product.price
               
               return (
                 <div
@@ -208,7 +185,7 @@ function Store() {
                   
                   <div className="text-center mb-4">
                     <div className="inline-block retro-panel px-4 py-2 store-price-box" style={{ backgroundColor: 'var(--store-price-bg-blue)' }}>
-                      <span className="text-2xl pixel-font font-bold" style={{ color: 'var(--store-price-text)' }}>
+                      <span className="text-2xl font-bold" style={{ color: 'var(--store-price-text)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 700 }}>
                         {product.price}
                       </span>
                       <span className="text-lg ml-1" style={{ color: 'var(--store-price-text)' }}>🪙</span>
@@ -243,7 +220,8 @@ function Store() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {itemsByCategory.health.map((product) => {
-              const canAfford = coins >= product.price
+              const currentCoins = pet?.coins ?? coins
+              const canAfford = currentCoins >= product.price
               
               return (
                 <div
@@ -269,7 +247,7 @@ function Store() {
                   
                   <div className="text-center mb-4">
                     <div className="inline-block retro-panel px-4 py-2 store-price-box" style={{ backgroundColor: 'var(--store-price-bg-red)' }}>
-                      <span className="text-2xl pixel-font font-bold" style={{ color: 'var(--store-price-text)' }}>
+                      <span className="text-2xl font-bold" style={{ color: 'var(--store-price-text)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 700 }}>
                         {product.price}
                       </span>
                       <span className="text-lg ml-1" style={{ color: 'var(--store-price-text)' }}>🪙</span>
@@ -304,7 +282,8 @@ function Store() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {itemsByCategory.toys.map((product) => {
-              const canAfford = coins >= product.price
+              const currentCoins = pet?.coins ?? coins
+              const canAfford = currentCoins >= product.price
               
               return (
                 <div
@@ -330,7 +309,7 @@ function Store() {
                   
                   <div className="text-center mb-4">
                     <div className="inline-block retro-panel px-4 py-2 store-price-box" style={{ backgroundColor: 'var(--store-price-bg-purple)' }}>
-                      <span className="text-2xl pixel-font font-bold" style={{ color: 'var(--store-price-text)' }}>
+                      <span className="text-2xl font-bold" style={{ color: 'var(--store-price-text)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 700 }}>
                         {product.price}
                       </span>
                       <span className="text-lg ml-1" style={{ color: 'var(--store-price-text)' }}>🪙</span>

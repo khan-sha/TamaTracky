@@ -48,12 +48,12 @@ function NavBar() {
             padding: '12px 0'
           }}
         >
-          {/* Left: Logo and app name - Clickable to home */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             <Link 
               to="/" 
               className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity duration-200"
               style={{ textDecoration: 'none' }}
+              title="Home - Save slots and demo mode"
             >
               <span className="pixel-emoji" style={{ fontSize: '20px', lineHeight: '1' }}>🐾</span>
               <span className="pixel-font" style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.05em', color: 'var(--text)' }}>
